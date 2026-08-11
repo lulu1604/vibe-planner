@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- US3: progreso diario -->
+<section class="progress">
+  <p>Avance de hoy: {{ progress.completed }} / {{ progress.total }}
+     ({{ progress.percent }}%)</p>
+  {# TODO (Ana): barra de progreso visual #}
+</section>
+
+<!-- Tiempo disponible: alimenta el bono de ajuste de tiempo -->
+<form method="get" action="{{ url_for('index_route') }}" class="available-form">
+  <label>Tiempo disponible hoy (min):
+    <input type="number" name="available" min="1" value="{{ available_minutes }}">
+  </label>
+  <button type="submit">Actualizar</button>
+</form>
+
+<!-- US1: alta de actividades -->
+<section class="new-task">
+  <h2>Nueva actividad</h2>
+  {# TODO (Ana): maquetar este formulario. Los name= NO se cambian. #}
+  <form method="post" action="{{ url_for('add_task_route') }}">
+    <input type="text" name="title" placeholder="Titulo" required>
+    <input type="text" name="category" placeholder="Categoria" value="General">
+    <select name="priority_level">
+      <option value="1">Alta</option>
+      <option value="2" selected>Media</option>
+      <option value="3">Baja</option>
+    </select>
+    <input type="date" name="due_date" required>
+    <input type="number" name="estimated_minutes" min="1" value="30">
+    <button type="submit">Agregar</button>
+  </form>
+</section>
+
+<!-- US2: lista priorizada -->
+<section class="task-list">
+  <h2>Plan del dia</h2>
+  {% if not tasks %}
+    <p class="empty">Aun no hay actividades. Agrega la primera arriba.</p>
+  {% endif %}
+
+  {% for task in tasks %}
+  <article class="task-card" data-task-id="{{ task.id }}">
+    <span class="score-badge">{{ task.score }} pts</span>
+    <h3>{{ task.title }}</h3>
+    <p>{{ task.category }} - vence {{ task.due_date }} -
+       {{ task.estimated_minutes }} min - {{ task.status }}</p>
+
+    <!-- US4: dispara el modal de explicabilidad -->
+    <button class="why-btn" data-task-id="{{ task.id }}">Por que?</button>
+
+    <!-- US3: cambio de estado -->
+    <form method="post" action="{{ url_for('update_status_route', task_id=task.id) }}">
+      <select name="status">
+        <option value="pending">Pendiente</option>
+        <option value="in_progress">En progreso</option>
+        <option value="completed">Completada</option>
+      </select>
+      <button type="submit">Guardar</button>
+    </form>
+
+    <!-- US1: borrado por POST, nunca por GET -->
+    <form method="post" action="{{ url_for('delete_task_route', task_id=task.id) }}">
+      <button type="submit">Eliminar</button>
+    </form>
+  </article>
+  {% endfor %}
+</section>
+
+{% include "score_modal.html" %}
+
+{% endblock %}

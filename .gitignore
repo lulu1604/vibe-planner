@@ -1,0 +1,17 @@
+# Entornos virtuales (cada integrante crea el suyo, NUNCA se sube)
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Base de datos: se genera sola, nunca se versiona
+*.db
+*.sqlite3
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store

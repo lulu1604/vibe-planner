@@ -1,0 +1,11 @@
+/* VibePlanner - estilos. DUENA: Piero
+   TODO: modo oscuro, tarjetas, badges (ver Elaboration). */
+
+body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; }
+header h1 { margin-bottom: 0; }
+.task-card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: .5rem 0; }
+.score-badge { float: right; font-weight: bold; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5);
+         display: flex; align-items: center; justify-content: center; }
+.modal[hidden] { display: none; }
+.modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; max-width: 420px; }

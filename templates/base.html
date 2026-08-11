@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}VibePlanner{% endblock %}</title>
+  <!-- CSS local: sin CDN (PythonAnywhere free tier no tiene red saliente) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>VibePlanner</h1>
+    <p>Tu plan del dia, ordenado y explicado.</p>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
