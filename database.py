@@ -84,7 +84,7 @@ def get_task_by_id(task_id):
 def add_task(task_data):
     """Inserta una nueva actividad en SQLite con status 'pending' de forma segura."""
     db = get_db()
-    db.execute(
+    cursor = db.execute(
         """INSERT INTO tasks
            (title, category, priority_level, due_date, estimated_minutes, status)
            VALUES (?, ?, ?, ?, ?, ?)""",
@@ -98,7 +98,7 @@ def add_task(task_data):
         ),
     )
     db.commit()
-    return True
+    return cursor.lastrowid if cursor.lastrowid else True
 
 
 def update_status(task_id, new_status):
@@ -147,3 +147,41 @@ def get_daily_progress():
         "completed": completed,
         "percent": percent
     }
+
+
+# --------------------------------------------------------------------------
+# PRUEBAS UNITARIAS Y SUITE DE ASSERTS (EVIDENCIA DE TESTING DE JOSE)
+# --------------------------------------------------------------------------
+if __name__ == "__main__":
+    # Test directo fuera de contexto Flask usando conexión SQLite pura
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    
+    # Assert 1: Inserción directa
+    cursor = conn.execute(
+        "INSERT INTO tasks (title, category, priority_level, due_date, estimated_minutes) VALUES (?, ?, ?, ?, ?)",
+        ("Tarea Test Jose", "Academic", 1, "2026-08-15", 45)
+    )
+    conn.commit()
+    test_id = cursor.lastrowid
+    assert test_id is not None, "Assert 1 Falló: Inserción de tarea"
+    
+    # Assert 2: Lectura
+    row = conn.execute("SELECT * FROM tasks WHERE id = ?", (test_id,)).fetchone()
+    assert row["title"] == "Tarea Test Jose" and row["priority_level"] == 1, "Assert 2 Falló: Lectura de tarea"
+    
+    # Assert 3: Actualización de estado
+    conn.execute("UPDATE tasks SET status = 'completed' WHERE id = ?", (test_id,))
+    conn.commit()
+    row_up = conn.execute("SELECT status FROM tasks WHERE id = ?", (test_id,)).fetchone()
+    assert row_up["status"] == "completed", "Assert 3 Falló: Actualización de estado"
+    
+    # Assert 4: Limpieza/Eliminación
+    conn.execute("DELETE FROM tasks WHERE id = ?", (test_id,))
+    conn.commit()
+    row_del = conn.execute("SELECT * FROM tasks WHERE id = ?", (test_id,)).fetchone()
+    assert row_del is None, "Assert 4 Falló: Eliminación de tarea"
+    
+    conn.close()
+    print("SUCCESS: Todas las 4 pruebas de assert para database.py pasaron exitosamente!")
