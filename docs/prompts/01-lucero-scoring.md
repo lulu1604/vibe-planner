@@ -1,13 +1,14 @@
 # Motor de Puntuación (scoring.py) - Lucero Ayala - 2026-08-12
 
 ## Prompt usado
-"Implementa las funciones calculate_score y rank_tasks en scoring.py según las reglas del proyecto: Total = P_Prioridad (1:50, 2:30, 3:10) + P_Urgencia (vencida u hoy:40, mañana:20, 2-3 días:10, +3 días:5) + P_Tiempo (+15 si entra en el disponible). Debe usar today_local() con America/Lima, devolver el breakdown exacto congelado y realizar un ordenamiento determinista por puntaje desc, due_date asc e id asc. Agrega 6 asserts de prueba al final."
+Prompt 1: "ahora nos encontramos en la rama scoring, dame una lista de lo que haras para scoring y de lo que piden"
+Prompt 2: "si"
 
 ## Qué generó la IA
-Generó la estructura de `calculate_score` con los 3 componentes, la función `rank_tasks` utilizando la clave de ordenamiento `(-x["score"], x["due_date"], x.get("id", 0))`, y la suite de pruebas al final del archivo con 6 `assert` para validar los casos límite.
+La IA presentó el desglose de reglas congeladas del proyecto y luego implementó la función `calculate_score` con los 3 componentes (Prioridad, Urgencia con zona horaria America/Lima y Ajuste de Tiempo), el ordenamiento determinista en `rank_tasks`, y los 6 `assert` de pruebas automatizadas al final del archivo.
 
 ## Qué corregí y por qué
-Se corrigió la salida del mensaje `print` al final del bloque `if __name__ == '__main__':` cambiando el caracter emoji `✅` por texto plano `SUCCESS: ...`. Esto fue necesario porque en entornos de terminal Windows con codificación por defecto CP1252, la impresión de caracteres UTF-8 no estándar generaba un error `UnicodeEncodeError`.
+Se corrigió la salida del mensaje `print` al final del archivo cambiando el caracter emoji `✅` por texto plano `SUCCESS: ...`. La IA había generado inicialmente `print("✅ ¡Todas las 6 pruebas de assert pasaron exitosamente!")`, lo cual provocaba un fallo `UnicodeEncodeError` en Windows debido a la codificación CP1252 por defecto en la terminal de comandos.
 
 ## Apareció en local o solo en producción?
-Apareció durante la prueba de ejecución directa local en Windows (`python scoring.py`).
+Apareció en local durante la ejecución directa del archivo en la consola de Windows (`python scoring.py`).
