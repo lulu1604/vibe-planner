@@ -1,7 +1,7 @@
 """
-VibePlanner - Capa de persistencia (walking skeleton)
+VibePlanner - Capa de persistencia (database.py)
 -----------------------------------------------------
-DUEÑO DE ESTE ARCHIVO: Jose (dueño único del esquema SQL)
+DUEÑO DE ESTE ARCHIVO: Jose Cabrera (dueño único del esquema SQL)
 
 CONTRATOS CONGELADOS - no cambiar estas firmas sin avisar al grupo:
     get_tasks(filter_status=None)      -> list[dict]
@@ -61,35 +61,40 @@ def init_db():
 
 
 # --------------------------------------------------------------------------
-# STUBS - Jose implementa el cuerpo. Las firmas ya están congeladas.
+# IMPLEMENTACIÓN DE CONSULTAS Y OPERACIONES PERSISTENTES (JOSE CABRERA)
 # --------------------------------------------------------------------------
+
 def get_tasks(filter_status=None):
-    """TODO: SELECT * FROM tasks (filtrando por status si viene)."""
+    """Devuelve las tareas registradas en SQLite, opcionalmente filtradas por estado."""
     db = get_db()
-    rows = db.execute("SELECT * FROM tasks").fetchall()
+    if filter_status:
+        rows = db.execute("SELECT * FROM tasks WHERE status = ? ORDER BY id DESC", (filter_status,)).fetchall()
+    else:
+        rows = db.execute("SELECT * FROM tasks ORDER BY id DESC").fetchall()
     return [dict(r) for r in rows]
 
 
 def get_task_by_id(task_id):
-    """TODO: SELECT una sola fila."""
+    """Obtiene un diccionario completo de la tarea especificada por id o None si no existe."""
     db = get_db()
     row = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
     return dict(row) if row else None
 
 
 def add_task(task_data):
-    """TODO: INSERT. Devuelve True si se insertó."""
+    """Inserta una nueva actividad en SQLite con status 'pending' de forma segura."""
     db = get_db()
     db.execute(
         """INSERT INTO tasks
-           (title, category, priority_level, due_date, estimated_minutes)
-           VALUES (?, ?, ?, ?, ?)""",
+           (title, category, priority_level, due_date, estimated_minutes, status)
+           VALUES (?, ?, ?, ?, ?, ?)""",
         (
             task_data["title"],
-            task_data["category"],
-            task_data["priority_level"],
+            task_data.get("category", "General"),
+            task_data.get("priority_level", 2),
             task_data["due_date"],
-            task_data["estimated_minutes"],
+            task_data.get("estimated_minutes", 30),
+            task_data.get("status", "pending")
         ),
     )
     db.commit()
@@ -97,15 +102,48 @@ def add_task(task_data):
 
 
 def update_status(task_id, new_status):
-    """TODO: UPDATE del campo status."""
-    return False
+    """
+    Actualiza el estado de una tarea. 
+    Valida que new_status sea uno de: 'pending', 'in_progress' o 'completed'.
+    Devuelve True si la fila existió y se actualizó correctamente, de lo contrario False.
+    """
+    allowed_statuses = ["pending", "in_progress", "completed"]
+    if new_status not in allowed_statuses:
+        return False
+        
+    db = get_db()
+    cursor = db.execute(
+        "UPDATE tasks SET status = ? WHERE id = ?",
+        (new_status, task_id)
+    )
+    db.commit()
+    return cursor.rowcount > 0
 
 
 def delete_task(task_id):
-    """TODO: DELETE por id."""
-    return False
+    """Elimina una tarea por su id. Devuelve True si se eliminó alguna fila."""
+    db = get_db()
+    cursor = db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    db.commit()
+    return cursor.rowcount > 0
 
 
 def get_daily_progress():
-    """TODO: contar completadas vs total. US3."""
-    return {"total": 0, "completed": 0, "percent": 0}
+    """
+    Calcula el total de tareas, tareas completadas y porcentaje de cumplimiento.
+    Previene la división por cero cuando no existen registros.
+    """
+    db = get_db()
+    total_row = db.execute("SELECT COUNT(*) AS total FROM tasks").fetchone()
+    completed_row = db.execute("SELECT COUNT(*) AS completed FROM tasks WHERE status = 'completed'").fetchone()
+    
+    total = total_row["total"] if total_row else 0
+    completed = completed_row["completed"] if completed_row else 0
+    
+    percent = round((completed / total) * 100, 1) if total > 0 else 0.0
+    
+    return {
+        "total": total,
+        "completed": completed,
+        "percent": percent
+    }
