@@ -21,11 +21,13 @@ FÓRMULA (especificada en Elaboration, NO improvisar):
     P_Tiempo    : +15 si estimated_minutes <= available_minutes, si no 0
 """
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone, timedelta
 
-# 'Hoy' en hora de Lima, NO la del servidor (PythonAnywhere corre en UTC).
-TZ = ZoneInfo("America/Lima")
+try:
+    from zoneinfo import ZoneInfo
+    TZ = ZoneInfo("America/Lima")
+except Exception:
+    TZ = timezone(timedelta(hours=-5))
 
 PRIORITY_POINTS = {1: 50, 2: 30, 3: 10}
 PRIORITY_LABEL = {1: "Alta", 2: "Media", 3: "Baja"}
@@ -36,10 +38,6 @@ def today_local():
     return datetime.now(TZ).date()
 
 
-# --------------------------------------------------------------------------
-# STUB - Lucero implementa el cuerpo real. Por ahora devuelve un valor fijo
-# para que la app arranque y Ana pueda maquetar contra la estructura correcta.
-# --------------------------------------------------------------------------
 def calculate_score(task, available_minutes):
     """Aplica la fórmula congelada: Total = P_Prioridad + P_Urgencia + P_AjusteTiempo."""
     today = today_local()
@@ -104,7 +102,7 @@ def rank_tasks(tasks, available_minutes):
         item["score"] = total
         item["score_breakdown"] = breakdown
         scored.append(item)
-    scored.sort(key=lambda x: (-x["score"], x["due_date"], x.get("id", 0)))
+    scored.sort(key=lambda x: (-x["score"], str(x["due_date"]), x.get("id", 0)))
     return scored
 
 
@@ -112,8 +110,6 @@ def rank_tasks(tasks, available_minutes):
 # PRUEBAS / ASSERTS DE EVIDENCIA DE TESTING
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
-    from datetime import timedelta
-
     today = today_local()
 
     # Tarea 1: Vencida
@@ -196,4 +192,3 @@ if __name__ == "__main__":
     assert ranked[0]["id"] == 8 and ranked[1]["id"] == 10, "Assert 6 Falló: Ordenamiento determinista"
 
     print("SUCCESS: Todas las 6 pruebas de assert pasaron exitosamente!")
-
