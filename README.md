@@ -5,6 +5,29 @@ Proyecto final - Fundamentals of Vibe Coding, ESAN Global Week 2026.
 
 **Equipo:** Lucero Ayala - Jose Cabrera - Piero Calderon - Ana Cusi
 
+🔗 **App desplegada:** https://ana1604.pythonanywhere.com
+📦 **Repositorio:** https://github.com/lulu1604/vibe-planner
+
+---
+
+## Estado del proyecto
+
+| Modulo | Responsable | Estado |
+|---|---|---|
+| `scoring.py` — motor de puntuacion | Lucero | ✅ 6 asserts |
+| `database.py` — persistencia | Jose | ✅ 4 asserts |
+| `app.py` — rutas y validacion | Ana | ✅ 11 asserts |
+| Despliegue en PythonAnywhere | Ana | ✅ En linea |
+| `templates/` + `static/` — frontend | Piero | 🚧 En progreso |
+
+Suites de pruebas (las tres deben pasar antes de desplegar):
+
+```bash
+python scoring.py     #  6 asserts
+python database.py    #  4 asserts
+python app.py test    # 11 asserts
+```
+
 ---
 
 ## Como levantar el proyecto en tu maquina
@@ -99,6 +122,24 @@ git push origin feature/tu-modulo
 
 **Merge a `main` todos los dias**, aunque tu parte este incompleta.
 Cuatro ramas que viven una semana = conflictos imposibles el ultimo dia.
+
+## Despliegue
+
+La aplicacion corre en PythonAnywhere: **https://ana1604.pythonanywhere.com**
+
+Guia completa de despliegue y tabla de errores comunes en
+[`docs/despliegue.md`](docs/despliegue.md).
+
+Para publicar cambios ya desplegados, en la consola Bash de PythonAnywhere:
+
+```bash
+cd ~/vibe-planner && git pull
+```
+
+Luego boton **Reload** en la pestana Web. `vibe_planner.db` esta en `.gitignore`,
+asi que los datos de produccion sobreviven a cada actualizacion.
+
+---
 
 ## Evidencia para Construction
 
