@@ -1,5 +1,5 @@
 """
-VibePlanner - Controlador Flask (walking skeleton)
+VibePlanner - Controlador Flask
 --------------------------------------------------
 DUEÑO DE ESTE ARCHIVO: Ana (rutas y despliegue)
 
@@ -14,6 +14,9 @@ import database
 import scoring
 
 app = Flask(__name__)          # <-- NO TOCAR ESTA LÍNEA
+
+# Inicializar esquema SQLite automáticamente al cargar el módulo WSGI
+database.init_db()
 
 # Tiempo disponible por defecto (minutos). US2/US4 lo usan para el bono de tiempo.
 DEFAULT_AVAILABLE_MINUTES = 120
@@ -46,10 +49,6 @@ def index_route():
 # --------------------------------------------------------------------------
 @app.route("/tasks", methods=["POST"])
 def add_task_route():
-    # TODO (Jose + Piero): validar en servidor antes de insertar
-    #   - title no vacío
-    #   - estimated_minutes entero > 0
-    #   - due_date en formato YYYY-MM-DD
     data = {
         "title": request.form.get("title", "").strip(),
         "category": request.form.get("category", "General"),
@@ -91,5 +90,4 @@ def score_breakdown_route(task_id):
 
 
 if __name__ == "__main__":
-    database.init_db()
     app.run(debug=True)
