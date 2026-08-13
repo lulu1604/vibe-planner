@@ -1,11 +1,423 @@
-/* VibePlanner - estilos. DUENA: Piero
-   TODO: modo oscuro, tarjetas, badges (ver Elaboration). */
+/* ==========================================================================
+   VibePlanner - Premium Design System & Stylesheet
+   Color Palette Specification:
+   - Navy:     #2F4156 (Deep Navy Background)
+   - Teal:     #567C8D (Slate Teal Accent & Borders)
+   - Sky Blue: #C8D9E6 (Soft Sky Blue Badges & Fills)
+   - Beige:    #F5EFEB (Light Beige Container Backgrounds & Text)
+   - White:    #FFFFFF (Pure White Input Fields & Card Cards)
+   ========================================================================== */
 
-body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; }
-header h1 { margin-bottom: 0; }
-.task-card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin: .5rem 0; }
-.score-badge { float: right; font-weight: bold; }
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5);
-         display: flex; align-items: center; justify-content: center; }
-.modal[hidden] { display: none; }
-.modal-content { background: #fff; padding: 1.5rem; border-radius: 8px; max-width: 420px; }
+:root {
+  --color-navy: #2F4156;
+  --color-navy-dark: #1E2D3D;
+  --color-teal: #567C8D;
+  --color-skyblue: #C8D9E6;
+  --color-beige: #F5EFEB;
+  --color-white: #FFFFFF;
+
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 15px rgba(200, 217, 230, 0.3);
+  --transition: all 0.25s ease;
+}
+
+/* Base Layout & Background */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background: linear-gradient(135deg, var(--color-navy-dark) 0%, var(--color-navy) 100%);
+  color: var(--color-beige);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+  max-width: 750px;
+  width: 100%;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--color-white);
+  margin-bottom: 0.4rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+header p {
+  font-size: 1.1rem;
+  color: var(--color-skyblue);
+  font-weight: 400;
+}
+
+main {
+  max-width: 750px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Glassmorphism Sections */
+section, .available-form {
+  background: rgba(86, 124, 141, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 217, 230, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-subtle);
+}
+
+/* Section Headings */
+h2 {
+  font-size: 1.35rem;
+  color: var(--color-white);
+  margin-bottom: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* US3: Progress Bar Component */
+.progress {
+  background: rgba(245, 239, 235, 0.08);
+  border: 1px solid rgba(86, 124, 141, 0.3);
+}
+
+.progress p {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-beige);
+  margin-bottom: 0.75rem;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(200, 217, 230, 0.2);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-teal) 0%, var(--color-skyblue) 100%);
+  border-radius: 20px;
+  transition: width 0.5s ease-in-out;
+}
+
+/* Available Time Form */
+.available-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.available-form label {
+  font-size: 0.95rem;
+  color: var(--color-beige);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Forms & Input Controls */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+  background: var(--color-white);
+  color: var(--color-navy-dark);
+  border: 1px solid var(--color-teal);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: var(--transition);
+}
+
+input:focus, select:focus {
+  border-color: var(--color-skyblue);
+  box-shadow: 0 0 0 3px rgba(200, 217, 230, 0.3);
+}
+
+/* New Task Grid Form */
+.new-task form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+}
+
+.new-task input[name="title"] {
+  grid-column: 1 / -1;
+}
+
+/* Buttons */
+button {
+  background: var(--color-teal);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+button:hover {
+  background: #466777;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.new-task button[type="submit"] {
+  background: var(--color-skyblue);
+  color: var(--color-navy-dark);
+  grid-column: 1 / -1;
+  font-size: 1rem;
+  padding: 0.75rem;
+}
+
+.new-task button[type="submit"]:hover {
+  background: var(--color-white);
+}
+
+/* Task Cards & List */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.empty {
+  color: var(--color-skyblue);
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.task-card {
+  background: var(--color-white);
+  color: var(--color-navy-dark);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  border-left: 6px solid var(--color-teal);
+  transition: var(--transition);
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+.task-card h3 {
+  font-size: 1.15rem;
+  color: var(--color-navy-dark);
+  font-weight: 700;
+  grid-column: 1;
+}
+
+.score-badge {
+  background: var(--color-navy);
+  color: var(--color-skyblue);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  grid-column: 2;
+  justify-self: end;
+  letter-spacing: 0.5px;
+}
+
+.task-card p {
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  color: #4a5568;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Task Card Actions Row */
+.task-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(86, 124, 141, 0.15);
+}
+
+.why-btn {
+  background: var(--color-skyblue);
+  color: var(--color-navy-dark);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.why-btn:hover {
+  background: var(--color-teal);
+  color: var(--color-white);
+}
+
+.status-form {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.status-form select {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.status-form button {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.delete-form button {
+  background: #d9534f;
+  color: var(--color-white);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.delete-form button:hover {
+  background: #c9302c;
+}
+
+/* Score Explanation Modal Dialog */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal[hidden] {
+  display: none !important;
+}
+
+.modal-content {
+  background: var(--color-beige);
+  color: var(--color-navy-dark);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--color-skyblue);
+  position: relative;
+}
+
+.modal-content h3 {
+  font-size: 1.3rem;
+  color: var(--color-navy-dark);
+  margin-bottom: 0.75rem;
+
+}
+
+#modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--color-teal);
+  color: var(--color-white);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 15px;
+}
+
+#modal-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-navy);
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: var(--color-skyblue);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+#modal-breakdown {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+#modal-breakdown li {
+  background: var(--color-white);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--color-teal);
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 600px) {
+  body {
+    padding: 1rem 0.5rem;
+  }
+  
+  .task-card {
+    grid-template-columns: 1fr;
+  }
+  
+  .score-badge {
+    grid-column: 1;
+    justify-self: start;
+  }
+  
+  .available-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
