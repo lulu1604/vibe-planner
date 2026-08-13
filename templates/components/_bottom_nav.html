@@ -1,0 +1,31 @@
+{#
+  Barra inferior (solo movil, < 600 px).
+  Se limita a 5 entradas: mas iconos a 360 px dejan objetivos tactiles por
+  debajo de los 44 px y se pulsa el de al lado.
+#}
+<nav class="bottom-nav" aria-label="Menu principal">
+  {% for entrada in menu_visible()[:5] %}
+    {% if entrada.disponible %}
+      <a href="{{ entrada.url }}"
+         {% if seccion_activa == entrada.clave %}aria-current="page"{% endif %}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="{{ entrada.icono }}"/>
+        </svg>
+        <span>{{ entrada.etiqueta }}</span>
+      </a>
+    {% else %}
+      <span aria-disabled="true" style="opacity:.45; display:flex;
+            flex-direction:column; align-items:center; justify-content:center;
+            flex:1; font-size:var(--text-xs); color:var(--text-on-dark);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="{{ entrada.icono }}"/>
+        </svg>
+        <span>{{ entrada.etiqueta }}</span>
+      </span>
+    {% endif %}
+  {% endfor %}
+</nav>

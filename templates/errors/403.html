@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Sin permiso · VibePlanner{% endblock %}
+{% block encabezado %}No tienes permiso para esta seccion{% endblock %}
+
+{% block content %}
+  {#
+    H9: el error dice que paso, por que y como se arregla. "403 Forbidden" no
+    le dice nada a nadie que no programe.
+
+    Y es un 403 DE VERDAD del servidor, no una pantalla bonita encima de una
+    ruta abierta: llegar aqui significa que @requires rechazo la peticion
+    (TC-07).
+  #}
+  <div class="card">
+    <p style="margin-bottom:var(--space-4);">
+      Tu cuenta no tiene el permiso que hace falta para abrir esta pagina.
+      Si crees que deberias tenerlo, pideselo a un administrador: puede
+      asignartelo sin que tengas que volver a entrar.
+    </p>
+    <div class="btn-fila">
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
+    </div>
+  </div>
+{% endblock %}

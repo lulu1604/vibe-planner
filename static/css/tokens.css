@@ -1,0 +1,138 @@
+/* =====================================================================
+   VibePlanner v2 - tokens.css
+   Fuente: docs/VUP_V2/00_Design_System.md  §4
+   Se carga ANTES que base.css y components.css.
+
+   LA FRASE QUE GOBIERNA LA PALETA:
+       El azul es la aplicacion. El rosa es la importancia.
+   Si el rosa se usa para adornar un encabezado, deja de leerse como senal y
+   el usuario lo ignora justo cuando de verdad significa algo.
+
+   REGLA: ningun hex suelto fuera de este archivo. Es lo que hace que ocho
+   pantallas hechas por cuatro personas parezcan una sola aplicacion.
+   ===================================================================== */
+
+:root {
+
+  /* -------------------------------------------------------------------
+     1. Paleta de identidad
+     Los ratios son contra el fondo indicado, medidos, no estimados.
+     ------------------------------------------------------------------- */
+  --navy:       #2F4156;
+  --navy-dark:  #24334252;   /* 8 digitos = con alfa. Solo sombras y capas */
+  --teal:       #567C8D;     /* bordes e iconos - NO texto pequeno (3.61:1) */
+  --teal-700:   #3F5F6E;     /* botones, enlaces, texto de acento (6.83:1) */
+  --sky:        #C8D9E6;
+  --beige:      #F5EFEB;
+  --white:      #FFFFFF;
+
+  /* -------------------------------------------------------------------
+     2. Paleta de importancia
+     ------------------------------------------------------------------- */
+  --rose:       #D7707F;     /* relleno y borde - NO texto (3.20:1) */
+  --rose-700:   #9E3B4B;     /* texto de alta prioridad y de error (6.60:1) */
+  --blush:      #F5D5DA;
+  --slate:      #D8D2D8;
+  --steel:      #9DA3A4;     /* bordes y desactivado - NO texto (2.56:1) */
+  --taupe:      #4C4D53;     /* texto secundario (7.39:1 sobre beige) */
+
+  /* -------------------------------------------------------------------
+     3. Roles semanticos  <- USA ESTOS EN LOS COMPONENTES
+     Nombrar por funcion y no por color es lo que permitiria cambiar el
+     tema entero tocando solo este bloque.
+     ------------------------------------------------------------------- */
+  --bg-app:        var(--beige);
+  --bg-surface:    var(--white);
+  --bg-sidebar:    var(--navy);
+  --bg-subtle:     var(--sky);
+
+  --text-strong:   var(--navy);
+  --text-body:     #33404F;      /* 9.27:1 sobre beige */
+  --text-muted:    var(--taupe);
+  --text-on-dark:  var(--beige);  /* 9.16:1 sobre navy */
+
+  --border:        #DCD5D0;
+  --border-strong: var(--steel);
+
+  --focus-ring:    var(--teal-700);
+  /* Excepcion del sidebar: es navy, y ahi --teal-700 da 1.53:1, o sea un
+     anillo de foco INVISIBLE. Sobre oscuro se usa --sky (7.22:1).
+     Se olvida siempre; por eso es un token y no una nota. */
+  --focus-ring-on-dark: var(--sky);
+
+  /* -------------------------------------------------------------------
+     4. Estados de formulario
+     AMPLIACION sobre el design system, que no define tokens de estado.
+     Los formularios de cuentas los necesitan y no queremos hex sueltos.
+     ------------------------------------------------------------------- */
+  --error-text:    var(--rose-700);
+  --error-bg:      var(--blush);
+  --error-border:  var(--rose);
+  --ok-text:       var(--teal-700);
+  --ok-bg:         var(--sky);
+  --ok-border:     var(--teal);
+
+  /* Componentes del puntaje (Modulo B) */
+  --score-priority: var(--rose-700);
+  --score-urgency:  var(--navy);
+  --score-timefit:  var(--teal-700);
+
+  /* -------------------------------------------------------------------
+     5. Tipografia
+     ------------------------------------------------------------------- */
+  --font-ui:   'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-data: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --text-xs:   0.75rem;    /* 12 */
+  --text-sm:   0.875rem;   /* 14 */
+  --text-base: 1rem;       /* 16 - minimo en campos: por debajo iOS hace zoom */
+  --text-lg:   1.125rem;   /* 18 */
+  --text-xl:   1.375rem;   /* 22 */
+  --text-2xl:  1.75rem;    /* 28 */
+  --text-3xl:  2.125rem;   /* 34 */
+
+  /* -------------------------------------------------------------------
+     6. Espaciado - base 4 px, sin valores intermedios
+     No existen --space-5, -7 ni -10 a proposito: la escala limitada es lo
+     que evita el "16px aqui, 18px alla" que descuadra las pantallas.
+     ------------------------------------------------------------------- */
+  --space-1:  0.25rem;   /*  4 */
+  --space-2:  0.5rem;    /*  8 */
+  --space-3:  0.75rem;   /* 12 */
+  --space-4:  1rem;      /* 16 */
+  --space-6:  1.5rem;    /* 24 */
+  --space-8:  2rem;      /* 32 */
+  --space-12: 3rem;      /* 48 */
+
+  /* -------------------------------------------------------------------
+     7. Formas, sombras, movimiento
+     ------------------------------------------------------------------- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(47, 65, 86, .08);
+  --shadow-md: 0 4px 12px rgba(47, 65, 86, .10);
+  --shadow-lg: 0 12px 32px rgba(47, 65, 86, .16);
+
+  --transition: 160ms ease;
+
+  /* -------------------------------------------------------------------
+     8. Medidas del layout
+     ------------------------------------------------------------------- */
+  --sidebar-width:           240px;
+  --sidebar-width-collapsed:  68px;
+  --bottom-nav-height:        64px;
+  --content-max:            1200px;
+  --touch-min:                44px;   /* objetivo tactil minimo */
+}
+
+/* Quien pidio menos movimiento en su sistema operativo, lo pidio en serio. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --transition: 0ms; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

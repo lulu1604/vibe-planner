@@ -1,0 +1,57 @@
+{% extends "base_auth.html" %}
+{% from "components/_field.html" import campo %}
+
+{% block title %}Entrar · VibePlanner{% endblock %}
+
+{% block content %}
+  <h1 class="card-titulo">Entrar</h1>
+
+  {#
+    El error del login va arriba y es uno solo, no debajo de cada campo.
+    Es DELIBERADO y es la unica excepcion de toda la aplicacion: el mensaje
+    dice "Usuario o contrasena incorrectos" sin precisar cual de los dos
+    fallo. Es peor UX a proposito -- si dijera "ese usuario no existe",
+    cualquiera podria enumerar las cuentas validas del sistema probando
+    nombres. Es el unico sitio donde la seguridad gana a la claridad.
+  #}
+  {% if error %}
+    <div class="alert alert--error" role="alert" style="margin-bottom: var(--space-6);">
+      <span>{{ error }}</span>
+    </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label class="field-etiqueta" for="campo-username">Nombre de usuario</label>
+      <input class="field-control" id="campo-username" name="username" type="text"
+             value="{{ datos.get('username', '') }}"
+             required autofocus
+             autocomplete="username" autocapitalize="none" spellcheck="false"
+             {% if error %}aria-invalid="true"{% endif %}>
+    </div>
+
+    <div class="field">
+      <label class="field-etiqueta" for="campo-password">Contrasena</label>
+      {#
+        Sin minlength ni pattern aqui a proposito. En el login no se valida el
+        formato de la contrasena: si el campo rechazara una contrasena de 6
+        caracteres, estaria contando que ninguna cuenta valida las tiene.
+        Y `current-password`, no `new-password`: le dice al gestor de
+        contrasenas que rellene, no que proponga una nueva.
+      #}
+      <input class="field-control" id="campo-password" name="password" type="password"
+             required autocomplete="current-password"
+             {% if error %}aria-invalid="true"{% endif %}>
+    </div>
+
+    <button class="btn btn--primary btn--bloque" type="submit" data-enviando="Entrando...">
+      Entrar
+    </button>
+  </form>
+{% endblock %}
+
+{% block pie %}
+  Aun no tienes cuenta? <a href="{{ url_for('auth.register') }}">Crear una cuenta</a>
+{% endblock %}

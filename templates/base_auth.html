@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}VibePlanner{% endblock %}</title>
+  {# Orden obligatorio: tokens define las variables, base las usa, components
+     construye encima. Cambiarlo deja los componentes sin variables. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  {# Una idea por pantalla: el login es un formulario, no un formulario mas
+     publicidad del producto. #}
+  <main class="auth-shell">
+    <div class="auth-caja">
+
+      <div class="auth-marca">
+        <span class="nombre">VibePlanner</span>
+        <span class="lema">Tu plan del dia, ordenado y explicado.</span>
+      </div>
+
+      {% include "components/_flash.html" %}
+
+      <div class="card">
+        {% block content %}{% endblock %}
+      </div>
+
+      <p class="auth-pie">{% block pie %}{% endblock %}</p>
+
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+</body>
+</html>

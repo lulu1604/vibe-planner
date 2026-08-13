@@ -1,0 +1,31 @@
+{#
+  Barra superior.
+  H1 (visibilidad del estado): quien mira la pantalla ve SIEMPRE con que
+  cuenta entro y que roles lleva. Que el usuario tenga que adivinar con que
+  cuenta esta es una de las formas mas faciles de que borre algo por error.
+#}
+<header class="topbar">
+  <a class="topbar-marca" href="{{ url_for('home.index') }}">
+    <span>VibePlanner</span>
+  </a>
+
+  <div class="topbar-usuario">
+    <span class="usuario-nombre">{{ usuario_actual.username }}</span>
+
+    {# Los roles como insignias con su nombre legible: "Administrador", no
+       `admin`. La pantalla habla el idioma del usuario, no el de la tabla. #}
+    <span class="badge-grupo">
+      {% for rol in roles_actuales %}
+        <span class="badge badge--rol-{{ rol.code }}">{{ rol.name }}</span>
+      {% endfor %}
+    </span>
+
+    {# Logout por POST, nunca por GET: un <img src="/logout"> en cualquier
+       otra pagina cerraria la sesion sola. #}
+    <form method="post" action="{{ url_for('auth.logout') }}" class="sin-margen">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn--ghost btn--sm" type="submit"
+              style="color: var(--text-on-dark);">Salir</button>
+    </form>
+  </div>
+</header>

@@ -1,0 +1,21 @@
+# Normalizacion de finales de linea.
+# Somos cuatro personas en Windows y el servidor corre Linux: sin esto, cada
+# quien commitea el archivo entero con sus CRLF y los diffs se vuelven ilegibles.
+* text=auto
+
+# Archivos que SIEMPRE llevan LF (los lee el servidor, no el editor)
+*.py    text eol=lf
+*.sql   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+
+# Binarios: nunca se tocan
+*.woff2 binary
+*.woff  binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.db    binary

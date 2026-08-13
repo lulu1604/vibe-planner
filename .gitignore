@@ -10,8 +10,20 @@ __pycache__/
 # Base de datos: se genera sola, nunca se versiona
 *.db
 *.sqlite3
+*.db-wal
+*.db-shm
+
+# Secretos: el SECRET_KEY de produccion vive en variables de entorno
+.env
+*.env
+
+# Bancos de prompts personales: SI se versionan (docs/VUP_V2/prompts_*/).
+# Son la evidencia de planificacion asistida por IA que pide la rubrica y
+# ademas asi tienen copia de seguridad. La evidencia formal sigue en docs/prompts/.
+_scratch/
 
 # Editores / SO
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db

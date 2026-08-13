@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}No se pudo enviar · VibePlanner{% endblock %}
+{% block encabezado %}No pudimos enviar ese formulario{% endblock %}
+
+{% block content %}
+  {#
+    Casi siempre es el token CSRF: el formulario llevaba demasiado tiempo
+    abierto, o la sesion se cerro en otra pestana.
+
+    Es 400 y no 403 a proposito: un 403 significa "no tienes permiso" y
+    mandaria a la persona a pedirle permisos a un administrador cuando lo
+    unico que necesita es volver a intentarlo.
+  #}
+  <div class="card">
+    <p style="margin-bottom:var(--space-4);">
+      {{ descripcion or "Vuelve a la pagina anterior, recargala e intentalo otra vez." }}
+    </p>
+    <div class="btn-fila">
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
+    </div>
+  </div>
+{% endblock %}
