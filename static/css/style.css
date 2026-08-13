@@ -1,20 +1,35 @@
 /* ==========================================================================
    VibePlanner - Premium Design System & Stylesheet
-   Color Palette Specification:
+   Main Palette Specification:
    - Navy:     #2F4156 (Deep Navy Background)
    - Teal:     #567C8D (Slate Teal Accent & Borders)
    - Sky Blue: #C8D9E6 (Soft Sky Blue Badges & Fills)
    - Beige:    #F5EFEB (Light Beige Container Backgrounds & Text)
    - White:    #FFFFFF (Pure White Input Fields & Card Cards)
+
+   Internal UI Component Accent Palette (Notifications, Tags, Urgency Pills):
+   - Soft Blush: #F5D5DA (Notifications & Soft Highlights)
+   - Old Rose:   #D7707F (High Priority & Urgency Badges)
+   - Pale Slate: #D8D2D8 (Category Pills & Secondary Tags)
+   - Cool Steel: #9DA3A4 (Status Badges & Neutral Borders)
+   - Taupe Grey: #4C4D53 (Dark Accents & Secondary Controls)
    ========================================================================== */
 
 :root {
+  /* Main Theme */
   --color-navy: #2F4156;
   --color-navy-dark: #1E2D3D;
   --color-teal: #567C8D;
   --color-skyblue: #C8D9E6;
   --color-beige: #F5EFEB;
   --color-white: #FFFFFF;
+
+  /* Component Accents */
+  --color-soft-blush: #F5D5DA;
+  --color-old-rose: #D7707F;
+  --color-pale-slate: #D8D2D8;
+  --color-cool-steel: #9DA3A4;
+  --color-taupe-grey: #4C4D53;
 
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --radius-sm: 6px;
@@ -95,10 +110,11 @@ h2 {
   gap: 0.5rem;
 }
 
-/* US3: Progress Bar Component */
+/* US3: Progress Bar & Notification Component */
 .progress {
   background: rgba(245, 239, 235, 0.08);
   border: 1px solid rgba(86, 124, 141, 0.3);
+  position: relative;
 }
 
 .progress p {
@@ -110,7 +126,7 @@ h2 {
 
 .progress-bar-container {
   width: 100%;
-  height: 12px;
+  height: 14px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 20px;
   overflow: hidden;
@@ -122,6 +138,21 @@ h2 {
   background: linear-gradient(90deg, var(--color-teal) 0%, var(--color-skyblue) 100%);
   border-radius: 20px;
   transition: width 0.5s ease-in-out;
+}
+
+/* Notification Banner (Soft Blush accent) */
+.notification-banner {
+  background: var(--color-soft-blush);
+  color: var(--color-navy-dark);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 10px rgba(245, 213, 218, 0.3);
 }
 
 /* Available Time Form */
@@ -253,6 +284,7 @@ button:active {
   grid-column: 1;
 }
 
+/* Score Badge & Category Pills */
 .score-badge {
   background: var(--color-navy);
   color: var(--color-skyblue);
@@ -263,6 +295,25 @@ button:active {
   grid-column: 2;
   justify-self: end;
   letter-spacing: 0.5px;
+}
+
+.category-pill {
+  background: var(--color-pale-slate);
+  color: var(--color-taupe-grey);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.urgency-pill-high {
+  background: var(--color-old-rose);
+  color: var(--color-white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
 }
 
 .task-card p {
@@ -315,14 +366,14 @@ button:active {
 }
 
 .delete-form button {
-  background: #d9534f;
+  background: var(--color-old-rose);
   color: var(--color-white);
   padding: 0.4rem 0.85rem;
   font-size: 0.85rem;
 }
 
 .delete-form button:hover {
-  background: #c9302c;
+  background: #c25968;
 }
 
 /* Score Explanation Modal Dialog */
@@ -358,7 +409,6 @@ button:active {
   font-size: 1.3rem;
   color: var(--color-navy-dark);
   margin-bottom: 0.75rem;
-
 }
 
 #modal-close {
