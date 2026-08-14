@@ -40,6 +40,7 @@ PERMISOS = [
     ("planner.eliminar",      "planner",    "Eliminar sus actividades"),
     ("kanban.ver",            "planner",    "Ver el tablero Kanban"),
     ("kanban.mover",          "planner",    "Mover actividades entre columnas"),
+    ("tarea.asignar",         "planner",    "Asignar tareas a otros integrantes"),
     # --- Calendario (Modulo C) --------------------------------------------
     ("calendario.ver",        "calendario", "Ver el calendario mensual"),
     ("evento.crear",          "calendario", "Crear eventos"),

@@ -107,12 +107,17 @@ def dia():
     ranked = scoring.rank_tasks(tareas_hoy, available)
     progreso = repo_tasks.daily_progress(user_id, hoy)
 
+    import repo_users
+    todos = repo_users.list_users(limit=100)
+    usuarios = [u for u in todos if u["id"] != user_id and u.get("is_active", 1)]
+
     return render_template(
         "planner/dia.html",
         tareas=ranked,
         hoy=hoy,
         available_minutes=available,
         progreso=progreso,
+        usuarios=usuarios,
     )
 
 

@@ -266,6 +266,18 @@
             <option value="done">Hecho</option>
           </select>
         </div>
+
+        {% if usuarios %}
+        <div class="field">
+          <label class="field-etiqueta" for="nt-assigned">Asignar a compañero (opcional)</label>
+          <select class="field-control" id="nt-assigned" name="assigned_to">
+            <option value="" selected>Para mí (Sin asignar)</option>
+            {% for u in usuarios %}
+              <option value="{{ u.id }}">{{ u.username }} {% if u.full_name %}({{ u.full_name }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
       </div>
     </div>
 
