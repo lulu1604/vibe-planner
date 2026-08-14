@@ -1,81 +1,199 @@
 {% extends "base.html" %}
 
+{#
+  Planner diario (US1-US4).
+  --------------------------------------------------------------------------
+  ACTUALIZADA A LA v2. Toda la funcionalidad que entrego Ana sigue igual y
+  contra los mismos endpoints: progreso, tiempo disponible, alta, listado
+  priorizado, cambio de estado, borrado y el modal de explicabilidad.
+
+  Lo que cambio es la capa visual: pasa del CSS propio de la v1 al design
+  system compartido (tokens -> base -> components), que es lo que hace que
+  esta pantalla y las del nucleo parezcan la misma aplicacion. Ningun hex
+  suelto: todo sale de tokens.css.
+
+  Y los tres formularios ya llevan token CSRF, asi que esta pantalla salio de
+  la lista de exenciones de security.py.
+#}
+
+{% block title %}Plan del dia · VibePlanner{% endblock %}
+{% block encabezado %}Plan del dia{% endblock %}
+
+{% block subtitulo %}
+  <p>Ordenado por puntaje. Cada actividad explica por que esta donde esta.</p>
+{% endblock %}
+
 {% block content %}
 
-<!-- US3: progreso diario -->
-<section class="progress">
-  <p>Avance de hoy: {{ progress.completed }} / {{ progress.total }} ({{ progress.percent }}%)</p>
-  <div class="progress-bar-container">
-    <div class="progress-bar-fill" style="width: {{ progress.percent }}%;"></div>
+  {# ------------------------------------------------------------------
+     US3 - Progreso del dia
+     La barra lleva SU NUMERO al lado: una barra sola obliga a estimar a ojo.
+     ------------------------------------------------------------------ #}
+  <div class="card" style="margin-bottom:var(--space-6);">
+    <div class="fila-entre" style="margin-bottom:var(--space-3);">
+      <h2>Avance de hoy</h2>
+      <span class="text-data" style="font-size:var(--text-lg); font-weight:700;
+            color:var(--text-strong);">
+        {{ progress.completed }} de {{ progress.total }} · {{ progress.percent }}%
+      </span>
+    </div>
+
+    <div class="barra-progreso"
+         role="progressbar"
+         aria-valuenow="{{ progress.percent }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="Actividades completadas hoy">
+      <div class="barra-progreso-relleno" style="width: {{ progress.percent }}%;"></div>
+    </div>
   </div>
-</section>
 
-<!-- Tiempo disponible: alimenta el bono de ajuste de tiempo -->
-<form method="get" action="{{ url_for('index_route') }}" class="available-form">
-  <label>Tiempo disponible hoy (min):
-    <input type="number" name="available" min="1" value="{{ available_minutes }}">
-  </label>
-  <button type="submit">Actualizar Tiempo</button>
-</form>
-
-<!-- US1: alta de actividades -->
-<section class="new-task">
-  <h2>Nueva actividad</h2>
-  <form method="post" action="{{ url_for('add_task_route') }}">
-    <input type="text" name="title" placeholder="Título de la actividad" required>
-    <input type="text" name="category" placeholder="Categoría" value="General">
-    <select name="priority_level">
-      <option value="1">Prioridad Alta (50 pts)</option>
-      <option value="2" selected>Prioridad Media (30 pts)</option>
-      <option value="3">Prioridad Baja (10 pts)</option>
-    </select>
-    <input type="date" name="due_date" required>
-    <input type="number" name="estimated_minutes" min="1" value="30" placeholder="Minutos est.">
-    <button type="submit">➕ Agregar Actividad</button>
+  {# ------------------------------------------------------------------
+     Tiempo disponible: alimenta el bono de ajuste de tiempo del puntaje
+     ------------------------------------------------------------------ #}
+  <form class="barra-filtros" method="get" action="{{ url_for('index_route') }}">
+    <div class="field">
+      <label class="field-etiqueta" for="campo-available">Tiempo disponible hoy</label>
+      <input class="field-control" id="campo-available" name="available"
+             type="number" min="1" max="1440" value="{{ available_minutes }}"
+             aria-describedby="ayuda-available">
+      <span class="field-ayuda" id="ayuda-available">
+        En minutos. Las actividades que entren en ese hueco suman 15 puntos.
+      </span>
+    </div>
+    <button class="btn btn--secondary" type="submit">Actualizar</button>
   </form>
-</section>
 
-<!-- US2: lista priorizada -->
-<section class="task-list">
-  <h2>Plan del Día</h2>
+  {# ------------------------------------------------------------------
+     US1 - Alta de actividad
+     ------------------------------------------------------------------ #}
+  <div class="card" style="margin-bottom:var(--space-6);">
+    <h2 class="card-titulo">Nueva actividad</h2>
+
+    <form method="post" action="{{ url_for('add_task_route') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      {# Conserva el tiempo disponible al volver, para no perder el contexto. #}
+      <input type="hidden" name="available" value="{{ available_minutes }}">
+
+      <div style="display:grid; gap:var(--space-4);
+                  grid-template-columns:repeat(auto-fit, minmax(13rem, 1fr));">
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-title">Titulo</label>
+          <input class="field-control" id="campo-title" name="title" type="text"
+                 required maxlength="120" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-category">Categoria</label>
+          <input class="field-control" id="campo-category" name="category" type="text"
+                 value="General" maxlength="40" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-priority">Prioridad</label>
+          <select class="field-control" id="campo-priority" name="priority_level">
+            <option value="1">Alta (50 pts)</option>
+            <option value="2" selected>Media (30 pts)</option>
+            <option value="3">Baja (10 pts)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-due">Fecha limite</label>
+          {# type="date" en vez de texto libre: prevenir el error es mejor que
+             explicarlo despues. El servidor lo revalida igual con strptime. #}
+          <input class="field-control" id="campo-due" name="due_date" type="date" required>
+        </div>
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-min">Duracion estimada</label>
+          <input class="field-control" id="campo-min" name="estimated_minutes"
+                 type="number" min="1" max="1440" value="30"
+                 aria-describedby="ayuda-min">
+          <span class="field-ayuda" id="ayuda-min">En minutos, entre 1 y 1440.</span>
+        </div>
+      </div>
+
+      <button class="btn btn--primary" type="submit" data-enviando="Agregando...">
+        Agregar actividad
+      </button>
+    </form>
+  </div>
+
+  {# ------------------------------------------------------------------
+     US2 - Lista priorizada
+     ------------------------------------------------------------------ #}
+  <h2 style="margin-bottom:var(--space-4);">Tus actividades</h2>
+
   {% if not tasks %}
-    <p class="empty">Aún no hay actividades. Agrega la primera arriba.</p>
+    <div class="estado-vacio">
+      <h3>Hoy no tienes nada planeado</h3>
+      <p>Agrega tu primera actividad y veras tu dia ordenado por puntaje.</p>
+    </div>
   {% endif %}
 
-  {% for task in tasks %}
-  <article class="task-card" data-task-id="{{ task.id }}">
-    <h3>{{ task.title }}</h3>
-    <span class="score-badge">{{ task.score }} pts</span>
-    <p>
-      <span><strong>Categoría:</strong> {{ task.category }}</span> • 
-      <span><strong>Vence:</strong> {{ task.due_date }}</span> • 
-      <span><strong>Duración:</strong> {{ task.estimated_minutes }} min</span> • 
-      <span><strong>Estado:</strong> {{ task.status }}</span>
-    </p>
+  <div class="pila-4">
+    {% for task in tasks %}
+      <article class="task-card {% if task.status == 'completed' %}esta-completada{% endif %}"
+               data-task-id="{{ task.id }}"
+               style="--color-actividad: var(--score-{{ 'priority' if task.priority_level == 1
+                      else ('urgency' if task.priority_level == 2 else 'timefit') }});">
 
-    <div class="task-actions">
-      <!-- US4: dispara el modal de explicabilidad -->
-      <button class="why-btn" data-task-id="{{ task.id }}">💡 ¿Por qué este orden?</button>
+        <div class="fila-entre">
+          <h3>{{ task.title }}</h3>
+          {# El puntaje SIEMPRE en fuente monoespaciada: los numeros se alinean
+             entre tarjetas y el ranking se compara de un vistazo. #}
+          <span class="badge badge--activa text-data"
+                style="font-size:var(--text-base);">{{ task.score }} pts</span>
+        </div>
 
-      <!-- US3: cambio de estado -->
-      <form method="post" action="{{ url_for('update_status_route', task_id=task.id) }}" class="status-form">
-        <select name="status">
-          <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pendiente</option>
-          <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>En progreso</option>
-          <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completada</option>
-        </select>
-        <button type="submit">Cambiar Estado</button>
-      </form>
+        <p class="text-muted" style="margin:var(--space-2) 0;">
+          <span class="badge {{ 'badge--rol-admin' if task.priority_level == 1
+                                else 'badge--inactiva' }}">
+            {{ {1: 'Prioridad alta', 2: 'Prioridad media', 3: 'Prioridad baja'}[task.priority_level] }}
+          </span>
+          <span class="badge badge--tu">{{ task.category }}</span>
+          · Vence el {{ task.due_date }}
+          · {{ task.estimated_minutes }} min
+        </p>
 
-      <!-- US1: borrado por POST -->
-      <form method="post" action="{{ url_for('delete_task_route', task_id=task.id) }}" class="delete-form">
-        <button type="submit">🗑️ Eliminar</button>
-      </form>
-    </div>
-  </article>
-  {% endfor %}
-</section>
+        <div class="btn-fila" style="margin-top:var(--space-3);">
+          {# US4 - el diferenciador del producto: por que este orden #}
+          <button class="btn btn--secondary btn--sm why-btn" type="button"
+                  data-task-id="{{ task.id }}">
+            Por que este orden?
+          </button>
 
-{% include "score_modal.html" %}
+          {# US3 - cambio de estado #}
+          <form method="post" action="{{ url_for('update_status_route', task_id=task.id) }}"
+                class="btn-fila sin-margen">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="available" value="{{ available_minutes }}">
+            <label class="solo-lectores" for="estado-{{ task.id }}">
+              Estado de {{ task.title }}
+            </label>
+            <select class="field-control" id="estado-{{ task.id }}" name="status"
+                    style="min-height:36px; padding:var(--space-2);">
+              <option value="pending"     {% if task.status == 'pending' %}selected{% endif %}>Pendiente</option>
+              <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>En curso</option>
+              <option value="completed"   {% if task.status == 'completed' %}selected{% endif %}>Completada</option>
+            </select>
+            <button class="btn btn--ghost btn--sm" type="submit">Cambiar</button>
+          </form>
+
+          {# US1 - borrado, siempre por POST #}
+          <form method="post" action="{{ url_for('delete_task_route', task_id=task.id) }}"
+                class="sin-margen">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="available" value="{{ available_minutes }}">
+            <button class="btn btn--danger btn--sm" type="submit">
+              Eliminar<span class="solo-lectores"> {{ task.title }}</span>
+            </button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  {% include "score_modal.html" %}
 
 {% endblock %}

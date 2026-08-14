@@ -58,10 +58,19 @@
   Reconocer antes que recordar: el rol explica lo que hace ahi mismo, en el
   momento en que hay que decidir, no en un manual aparte.
 #}
-{% macro casilla_rol(codigo, titulo, descripcion, marcada=false, bloqueada=false) %}
-  <label class="casilla" for="rol-{{ codigo }}">
+{#
+  `prefijo` NO es decorativo: el id tiene que ser unico EN TODO EL DOCUMENTO.
+  Cuando el listado pintaba un modal de roles por fila, las 7 casillas
+  compartian id="rol-usuario", y un <label for="..."> apunta siempre al
+  PRIMER elemento que coincide: pulsar "Administrador" en la fila de lucero
+  marcaba la casilla del formulario de alta. Quien use este macro dos veces
+  en una pagina debe pasar prefijos distintos.
+#}
+{% macro casilla_rol(codigo, titulo, descripcion, marcada=false, bloqueada=false,
+                     prefijo="rol") %}
+  <label class="casilla" for="{{ prefijo }}-{{ codigo }}">
     <input type="checkbox"
-           id="rol-{{ codigo }}"
+           id="{{ prefijo }}-{{ codigo }}"
            name="roles"
            value="{{ codigo }}"
            {% if marcada %}checked{% endif %}

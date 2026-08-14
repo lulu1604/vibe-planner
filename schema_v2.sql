@@ -1,25 +1,7 @@
 -- =====================================================================
 -- VibePlanner v2 - schema_v2.sql
--- MODULO A (Nucleo) - Piero Calderon
+-- MODULO A (Nucleo) - Piero Calderon & MODULO C (Calendario) - Jose Cabrera
 -- Coordinado con Jose Cabrera, dueno unico del esquema.
---
--- ALCANCE DE ESTE ARCHIVO -- leer antes de anadir nada:
---   Aqui viven SOLO las 5 tablas de identidad. Es deliberado.
---   Este esquema se mergea a `main` mientras la v1 sigue en produccion, asi
---   que tiene que ser ESTRICTAMENTE ADITIVO: anadir `user_id NOT NULL` a
---   `tasks` hoy tumbaria add_task(), que no lo envia, y con el las 5 rutas
---   de la v1. Las tablas de los modulos B (tasks v2), C (events) y D
---   (habits) las anade Jose el dia de la migracion coordinada, cuando todos
---   borran su vibe_planner.db a la vez.
---
--- Arreglos de REVISION_BD_ESCALABILIDAD.md ya aplicados:
---   H1  COLLATE NOCASE en username y email
---   H3  updated_at + trigger (SQLite no tiene ON UPDATE CURRENT_TIMESTAMP)
---   H4  las escrituras usan ON CONFLICT ... DO NOTHING (portable a PostgreSQL)
---
--- OJO: las FOREIGN KEY de este archivo solo se respetan si la conexion trae
--- `PRAGMA foreign_keys = ON`. No es persistente: hay que ponerlo en CADA
--- conexion. Sin el, SQLite las ignora en silencio.
 -- =====================================================================
 
 
@@ -28,13 +10,10 @@
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    -- H1: sin COLLATE NOCASE, 'Piero' y 'piero' serian dos cuentas distintas.
     username      TEXT      NOT NULL UNIQUE COLLATE NOCASE,
     email         TEXT      NOT NULL UNIQUE COLLATE NOCASE,
-    -- Nunca la contrasena: solo su hash. Ver config.PASSWORD_HASH_METHOD.
     password_hash TEXT      NOT NULL,
     full_name     TEXT      NOT NULL DEFAULT '',
-    -- Desactivar NO es borrar: las tareas y eventos de la cuenta sobreviven.
     is_active     INTEGER   NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -46,8 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS roles (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    code        TEXT      NOT NULL UNIQUE COLLATE NOCASE,  -- 'usuario', 'admin'
-    name        TEXT      NOT NULL,                        -- 'Usuario', 'Administrador'
+    code        TEXT      NOT NULL UNIQUE COLLATE NOCASE,
+    name        TEXT      NOT NULL,
     description TEXT      NOT NULL DEFAULT '',
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,12 +34,11 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- ---------------------------------------------------------------------
 -- 3. Catalogo de permisos
---    Los decoradores comprueban ESTOS codigos, nunca nombres de rol.
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS permissions (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    code        TEXT NOT NULL UNIQUE COLLATE NOCASE,  -- 'usuario.listar'
-    module      TEXT NOT NULL,                        -- 'nucleo', 'planner', ...
+    code        TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    module      TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT ''
 );
 
@@ -71,20 +49,16 @@ CREATE TABLE IF NOT EXISTS permissions (
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id       INTEGER NOT NULL REFERENCES roles(id)       ON DELETE CASCADE,
     permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-    -- La clave primaria compuesta es tambien el destino del ON CONFLICT (H4).
     PRIMARY KEY (role_id, permission_id)
 );
 
 
 -- ---------------------------------------------------------------------
--- 5. Que roles lleva cada cuenta  -- AQUI VIVE EL MODELO AGREGATIVO
---    Un usuario puede tener varias filas aqui. Sus permisos son la UNION.
---    Por eso el administrador es tambien un usuario normal: lleva los dos.
+-- 5. Que roles lleva cada cuenta  -- MODELO AGREGATIVO
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id    INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role_id    INTEGER   NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    -- Quien lo concedio. SET NULL: si esa cuenta se borra, el rol sigue.
     granted_by INTEGER            REFERENCES users(id) ON DELETE SET NULL,
     granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role_id)
@@ -92,18 +66,52 @@ CREATE TABLE IF NOT EXISTS user_roles (
 
 
 -- ---------------------------------------------------------------------
--- 6. Indices
---    Los UNIQUE de username/email ya crean su indice: no se repiten aqui.
+-- 6. MÓDULO C: Eventos e Invitaciones
 -- ---------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS ix_user_roles_role       ON user_roles(role_id);
-CREATE INDEX IF NOT EXISTS ix_role_permissions_perm ON role_permissions(permission_id);
-CREATE INDEX IF NOT EXISTS ix_users_active          ON users(is_active);
+CREATE TABLE IF NOT EXISTS events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id    INTEGER NOT NULL,
+    title       TEXT    NOT NULL,
+    description TEXT    DEFAULT '',
+    start_at    TEXT    NOT NULL,                  -- 'YYYY-MM-DD HH:MM'
+    end_at      TEXT    NOT NULL,                  -- 'YYYY-MM-DD HH:MM'
+    color       TEXT    DEFAULT '#567C8D',
+    status      TEXT    NOT NULL DEFAULT 'confirmado',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (status IN ('tentativo','confirmado','cancelado')),
+    CHECK (end_at > start_at),
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS event_invitations (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id        INTEGER NOT NULL,
+    token           TEXT    NOT NULL UNIQUE,       -- secrets.token_urlsafe(32)
+    invited_user_id INTEGER,                       -- NULL hasta que alguien acepta
+    status          TEXT    NOT NULL DEFAULT 'pending',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (status IN ('pending','accepted','declined','revoked')),
+    FOREIGN KEY (event_id)        REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (invited_user_id) REFERENCES users(id)  ON DELETE CASCADE
+);
 
 
 -- ---------------------------------------------------------------------
--- 7. H3: updated_at automatico
---     SQLite no tiene ON UPDATE CURRENT_TIMESTAMP. El guard `WHEN` evita que
---     el trigger se dispare a si mismo si alguien activa recursive_triggers.
+-- 7. Indices
+-- ---------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS ix_user_roles_role        ON user_roles(role_id);
+CREATE INDEX IF NOT EXISTS ix_role_permissions_perm  ON role_permissions(permission_id);
+CREATE INDEX IF NOT EXISTS ix_users_active           ON users(is_active);
+CREATE INDEX IF NOT EXISTS ix_events_owner_start     ON events(owner_id, start_at);
+
+-- Un usuario no puede aceptar dos veces el mismo evento (TC-32).
+CREATE UNIQUE INDEX IF NOT EXISTS ux_invitation_event_user
+    ON event_invitations(event_id, invited_user_id)
+    WHERE invited_user_id IS NOT NULL;
+
+
+-- ---------------------------------------------------------------------
+-- 8. Trigger updated_at automatico
 -- ---------------------------------------------------------------------
 CREATE TRIGGER IF NOT EXISTS trg_users_updated
 AFTER UPDATE ON users FOR EACH ROW

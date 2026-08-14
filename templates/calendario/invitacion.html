@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Invitación a Evento{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200 text-center mt-10">
+    {% if error %}
+        <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <span class="text-3xl block mb-2">⚠️</span>
+            <h3 class="font-bold text-lg">Invitación no disponible</h3>
+            <p class="text-sm mt-1">{{ error }}</p>
+        </div>
+        <div class="mt-6">
+            <a href="{{ url_for('calendar_bp.index') }}" class="btn btn-primary">Ir a mi Calendario</a>
+        </div>
+    {% else %}
+        <div class="mb-4">
+            <span class="inline-block p-3 bg-blue-100 rounded-full text-blue-600 text-2xl mb-2">🎉</span>
+            <h2 class="text-xl font-bold text-navy-900">{{ invitation.title }}</h2>
+            <p class="text-sm text-gray-500 mt-1">Invitación de <strong class="text-navy-700">{{ invitation.anfitrion_nombre or invitation.anfitrion }}</strong></p>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg text-left text-sm mb-6 border">
+            <p class="mb-2"><strong>🗓️ Inicio:</strong> {{ invitation.start_at }}</p>
+            <p class="mb-2"><strong>⌛ Fin:</strong> {{ invitation.end_at }}</p>
+            {% if invitation.description %}
+                <p class="mb-2"><strong>📝 Detalles:</strong> {{ invitation.description }}</p>
+            {% endif %}
+            <p class="mt-2 text-xs text-gray-400">👥 {{ attendees_count }} asistente(s) confirmado(s)</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('calendar_bp.accept_invitation', token=token) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary w-full py-3 text-base font-bold">
+                ✅ Aceptar Invitación e Incluir en mi Calendario
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

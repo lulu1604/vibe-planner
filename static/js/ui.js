@@ -39,10 +39,21 @@
     });
   });
 
+  // Cierre 1 de 3: los botones "x" y "Cancelar".
+  document.querySelectorAll("[data-cierra-modal]").forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      var modal = boton.closest("dialog");
+      if (modal) modal.close();
+    });
+  });
+
+  // Cierre 2 de 3: clic fuera. (El 3 es Escape, y lo trae <dialog> de fabrica,
+  // igual que devolver el foco al boton que lo abrio.)
   document.querySelectorAll("dialog.modal").forEach(function (modal) {
     modal.addEventListener("click", function (evento) {
       // El <dialog> ocupa toda la pantalla; el recuadro visible es su caja.
       // Si el clic cae fuera de esa caja, fue en el fondo.
+      if (evento.target !== modal) return;
       var caja = modal.getBoundingClientRect();
       var fuera = evento.clientX < caja.left || evento.clientX > caja.right ||
                   evento.clientY < caja.top  || evento.clientY > caja.bottom;
@@ -50,8 +61,66 @@
     });
   });
 
+  // Un formulario que volvio con errores de validacion reabre su modal solo:
+  // si no, los mensajes de error quedarian dentro de un dialogo cerrado y la
+  // pantalla pareceria no haber hecho nada.
+  var modalPendiente = document.querySelector("dialog[data-abrir-al-cargar]");
+  if (modalPendiente && typeof modalPendiente.showModal === "function") {
+    modalPendiente.showModal();
+    var primerError = modalPendiente.querySelector("[aria-invalid='true']");
+    if (primerError) primerError.focus();
+  }
+
   /* -------------------------------------------------------------------
-     3. Aviso de campo ya tomado (solo en el panel de administracion)
+     3. Menu de cuenta de la barra superior
+     Patron "disclosure": un boton con aria-expanded que ensena u oculta
+     un panel. Se cierra de tres formas -- volver a pulsar, Escape y clic
+     fuera -- y Escape DEVUELVE EL FOCO al boton, que es lo que siempre
+     se olvida y lo que deja a quien navega con teclado perdido en el
+     principio del documento.
+     ------------------------------------------------------------------- */
+  var disparador = document.getElementById("menu-cuenta-boton");
+  var panel = document.getElementById("menu-cuenta-panel");
+
+  if (disparador && panel) {
+    var abrirMenu = function (abierto) {
+      disparador.setAttribute("aria-expanded", abierto ? "true" : "false");
+      panel.hidden = !abierto;
+    };
+
+    disparador.addEventListener("click", function (evento) {
+      evento.stopPropagation();
+      abrirMenu(disparador.getAttribute("aria-expanded") !== "true");
+    });
+
+    // Los clics DENTRO del panel no cuentan como "fuera": sin esto, pulsar
+    // un enlace del menu lo cerraria antes de que el navegador lo siguiera.
+    panel.addEventListener("click", function (evento) {
+      evento.stopPropagation();
+    });
+
+    document.addEventListener("click", function () {
+      abrirMenu(false);
+    });
+
+    document.addEventListener("keydown", function (evento) {
+      if (evento.key !== "Escape") return;
+      if (disparador.getAttribute("aria-expanded") !== "true") return;
+      abrirMenu(false);
+      disparador.focus();
+    });
+
+    // Salir del menu con Tab tambien lo cierra: dejarlo abierto detras
+    // mientras el foco esta en otra parte de la pagina desorienta.
+    panel.addEventListener("focusout", function (evento) {
+      if (!panel.contains(evento.relatedTarget) && evento.relatedTarget !== disparador) {
+        abrirMenu(false);
+      }
+    });
+  }
+
+  /* -------------------------------------------------------------------
+     4. Aviso de campo ya tomado (solo en el panel de administracion)
      La comprobacion al salir del campo evita rellenar todo el formulario
      para descubrir al enviarlo que el usuario ya existia.
 

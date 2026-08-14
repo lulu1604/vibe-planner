@@ -51,6 +51,7 @@ En el panel **Web → Environment variables** de PythonAnywhere:
 |---|---|---|
 | `VIBEPLANNER_SECRET` | una cadena larga y aleatoria | Firma las cookies de sesión. Con el valor por defecto cualquiera puede falsificar una sesión |
 | `VIBEPLANNER_ADMIN_USER` | el usuario del administrador | Se usa una sola vez, al sembrar |
+| `VIBEPLANNER_ADMIN_EMAIL` | un correo real del equipo | Se usa una sola vez, al sembrar |
 | `VIBEPLANNER_ADMIN_PASS` | una contraseña real | **Si se queda la de por defecto, la aplicación queda abierta** |
 
 Generar el secreto:
@@ -58,6 +59,16 @@ Generar el secreto:
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
+
+> ⚠️ **Las variables del panel Web no llegan a la consola Bash.** Como `seed.py` se
+> ejecuta desde la consola, hay que exportarlas también ahí antes de sembrar, o el
+> administrador se creará con los valores por defecto:
+>
+> ```bash
+> export VIBEPLANNER_ADMIN_USER='admin'
+> export VIBEPLANNER_ADMIN_EMAIL='vibeplanner@esan.pe'
+> export VIBEPLANNER_ADMIN_PASS='la-que-pusiste-en-el-panel'
+> ```
 
 > ⚠️ Estas variables **nunca** se escriben en el repositorio. Lo que entra al
 > historial de Git es público para siempre, aunque después se borre el archivo.

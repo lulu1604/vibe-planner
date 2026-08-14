@@ -16,23 +16,6 @@ a avisar al grupo ANTES, porque rompe codigo de otras tres personas.
     csrf_token()                    -> str      (para las plantillas)
     validate_csrf()                 -> bool
     init_app(app)                   (lo llama app.py una vez)
-
-COMO SE USA EN UNA RUTA
-    @planner.route("/mis-cosas")
-    @requires("planner.ver")            # llave 1: el permiso
-    def mis_cosas():
-        user_id = current_user_id()     # llave 2: el filtro DENTRO del WHERE
-        ...
-
-Las dos llaves son necesarias. El decorador dice "puedes ver planners"; el
-user_id dentro del WHERE dice "el tuyo". Con solo la primera, cualquiera con
-`planner.ver` lee los datos de todos.
-
-Y en las plantillas:
-    {% if has_permission('usuario.listar') %} ... {% endif %}
-Eso es CORTESIA VISUAL, no seguridad: oculta el boton, no protege la ruta. La
-ruta la protege @requires en el servidor, y sigue protegida aunque alguien
-escriba la URL a mano.
 """
 
 import functools
@@ -51,10 +34,6 @@ CSRF_FIELD = "_csrf"
 METODOS_SEGUROS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
 # Rutas de la v1 exentas de CSRF durante la transicion.
-# Anadido 2026-08-13: son las 3 rutas de tareas monousuario, que hoy no tienen
-# sesion que falsificar y cuyos formularios son de Ana. Desaparecen cuando el
-# Modulo B reescriba el planner sobre `@login_required`, y con ellas esta lista.
-# NADA nuevo entra aqui: si un formulario necesita exencion, esta mal disenado.
 CSRF_EXENTAS = frozenset({
     "add_task_route",
     "delete_task_route",
@@ -66,13 +45,6 @@ CSRF_EXENTAS = frozenset({
 # Quien es el que pregunta
 # --------------------------------------------------------------------------
 def current_user():
-    """
-    La cuenta de la sesion, o None.
-
-    Se cachea en `g`, que dura UNA peticion. Si la cuenta se desactivo o se
-    borro entre dos clics, la sesion se cierra aqui mismo: la cookie sigue
-    siendo valida criptograficamente, pero la cuenta ya no.
-    """
     if "usuario" not in g:
         g.usuario = None
         user_id = session.get(SESSION_USER_KEY)
@@ -91,16 +63,6 @@ def current_user_id():
 
 
 def effective_permissions():
-    """
-    La union de los permisos de todos los roles de la cuenta.
-
-    SE CACHEAN EN `g`, JAMAS EN LA SESION. Es la decision de seguridad mas
-    importante de este archivo: si vivieran en la cookie, quitarle el rol
-    `admin` a alguien no tendria ningun efecto hasta que cerrara sesion, y
-    mientras tanto seguiria administrando el sistema con una cookie caducada
-    en la practica. `g` dura una peticion, asi que el cambio se nota en la
-    siguiente recarga (TC-09).
-    """
     if "permisos" not in g:
         usuario = current_user()
         g.permisos = repo_users.get_permissions(usuario["id"]) if usuario else set()
@@ -112,14 +74,6 @@ def has_permission(codigo):
 
 
 def current_roles():
-    """
-    Los roles de la cuenta, para PINTARLOS ("Usuario", "Administrador").
-
-    Solo para mostrar. Ninguna decision de acceso mira esta lista: para eso
-    esta has_permission(). Si alguien empieza a escribir
-    `if 'admin' in current_roles()`, la tabla de permisos deja de servir para
-    nada y volvemos a tener el rol incrustado en el codigo.
-    """
     if "roles" not in g:
         usuario = current_user()
         g.roles = repo_users.get_roles(usuario["id"]) if usuario else []
@@ -130,12 +84,9 @@ def current_roles():
 # Decoradores
 # --------------------------------------------------------------------------
 def login_required(vista):
-    """Sin sesion -> al login, recordando a donde queria ir."""
     @functools.wraps(vista)
     def envoltura(*args, **kwargs):
         if current_user() is None:
-            # H3: si abrio un enlace concreto sin sesion, despues de entrar
-            # vuelve ahi, no al inicio.
             session[SESSION_NEXT_KEY] = request.full_path
             return redirect(url_for("auth.login"))
         return vista(*args, **kwargs)
@@ -143,14 +94,6 @@ def login_required(vista):
 
 
 def requires(*codigos):
-    """
-    Exige TODOS los permisos indicados.
-
-    Comprueba PERMISOS, nunca nombres de rol. Un `@admin_required` volveria a
-    meter el rol dentro del codigo y anularia la tabla entera: si manana se
-    crea un rol `soporte` con `usuario.listar`, con @requires entra solo y con
-    @admin_required se queda fuera aunque tenga el permiso.
-    """
     def decorador(vista):
         @functools.wraps(vista)
         @login_required
@@ -167,22 +110,12 @@ def requires(*codigos):
 # CSRF
 # --------------------------------------------------------------------------
 def csrf_token():
-    """
-    El token de la sesion. Se genera la primera vez que una plantilla lo pide.
-
-    Va en todo formulario POST:
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    """
     if SESSION_CSRF_KEY not in session:
         session[SESSION_CSRF_KEY] = secrets.token_urlsafe(32)
     return session[SESSION_CSRF_KEY]
 
 
 def validate_csrf():
-    """
-    `compare_digest` en vez de `==` para no filtrar por tiempo cuantos
-    caracteres iniciales acerto quien lo esta adivinando.
-    """
     esperado = session.get(SESSION_CSRF_KEY) or ""
     enviado = request.form.get(CSRF_FIELD) or request.headers.get("X-CSRF-Token") or ""
     if not esperado or not enviado:
@@ -194,7 +127,6 @@ def validate_csrf():
 # Enganche con la aplicacion
 # --------------------------------------------------------------------------
 def register_template_helpers(app):
-    """Expone a Jinja2 lo que las plantillas necesitan sin pasarlo ruta por ruta."""
     app.context_processor(lambda: {
         "current_user": current_user,
         "current_roles": current_roles,
@@ -204,14 +136,6 @@ def register_template_helpers(app):
 
 
 def init_app(app):
-    """
-    Lo llama app.py una sola vez.
-
-    El `before_request` valida el CSRF de TODO metodo que escriba, en todas las
-    rutas a la vez. Ponerlo formulario por formulario es como se olvida uno:
-    aqui la proteccion es el valor por defecto y saltarsela exige entrar en
-    CSRF_EXENTAS, que se ve en la revision de codigo.
-    """
     @app.before_request
     def _validar_csrf():
         if request.method in METODOS_SEGUROS:
