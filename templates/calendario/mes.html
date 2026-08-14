@@ -61,8 +61,18 @@
   <div class="calendar-grid" role="grid"
        aria-label="Dias de {{ month_name }} de {{ year }}">
 
-    {% for dia in ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"] %}
-      <div class="calendar-day-header" role="columnheader">{{ dia }}</div>
+    {# Dos formas del mismo dia: la abreviatura para pantallas normales y la
+       inicial para movil, donde la columna mide 44 px y "Lun" no cabe. El CSS
+       ensena una u otra; el nombre completo va en `title` para quien pase por
+       encima y en el aria-label de la cuadricula. #}
+    {% for corto, largo, completo in [
+        ("L", "Lun", "Lunes"),     ("M", "Mar", "Martes"),
+        ("X", "Mie", "Miercoles"), ("J", "Jue", "Jueves"),
+        ("V", "Vie", "Viernes"),   ("S", "Sab", "Sabado"),
+        ("D", "Dom", "Domingo")] %}
+      <div class="calendar-day-header" role="columnheader" title="{{ completo }}">
+        <span class="dia-largo">{{ largo }}</span><span class="dia-corto">{{ corto }}</span>
+      </div>
     {% endfor %}
 
     {% for week in month_cal %}

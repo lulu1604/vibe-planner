@@ -454,6 +454,11 @@
   /* Crece con la pantalla en vez de quedarse en una altura fija: en un
      monitor grande las celdas se estiran y caben los eventos sin recortar. */
   min-height: clamp(84px, 11vh, 160px);
+  /* SIN ESTO la cuadricula se rompe. Un elemento de grid vale por defecto
+     `min-width: auto`, o sea "no me encojas por debajo de mi contenido", y los
+     chips llevan `white-space: nowrap`: un evento con titulo largo ensancha su
+     columna, descuadra las otras seis y saca scroll horizontal. */
+  min-width: 0;
   padding: var(--space-2);
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -545,14 +550,37 @@
 .badge-guest { font-size: var(--text-xs); margin-left: 2px; }
 .more-events-badge { font-size: var(--text-xs); font-weight: 700; color: var(--text-muted); }
 
-/* A 360 px las 7 columnas dejan ~44 px cada una: se recorta la altura y se
-   ocultan los chips, dejando solo el numero y un contador. */
+/* A 360 px las 7 columnas dejan ~44 px cada una. Un chip con texto ahi no se
+   lee: se convierte en un PUNTO del color del evento. El titulo sigue en el
+   DOM -- solo esta oculto visualmente -- asi que un lector de pantalla lo
+   sigue leyendo y el `title` del enlace lo muestra al tocarlo. */
 @media (max-width: 599px) {
   .calendar-container { padding: var(--space-2); }
   .calendar-grid { gap: 2px; }
-  .calendar-cell { min-height: 56px; }
-  .calendar-day-header { font-size: 10px; padding: var(--space-1); }
+  .calendar-cell { min-height: 60px; padding: var(--space-1); }
+  .calendar-day-header { padding: var(--space-1); }
+
+  /* Iniciales en vez de "Lun": a 44 px no cabe la abreviatura de tres letras. */
+  .dia-largo { display: none; }
+  .dia-corto { display: inline; }
+
+  .calendar-events-list { flex-direction: row; flex-wrap: wrap; gap: 3px; }
+
+  .event-chip {
+    width: 7px; height: 7px;
+    padding: 0; border: 0; border-radius: 50%;
+    background: var(--color-evento, var(--teal));
+    overflow: hidden;
+    text-indent: -9999px;   /* el texto sigue ahi para quien no ve la pantalla */
+  }
+  .event-chip:hover { transform: none; }
+
+  .more-events-badge { font-size: 10px; }
+  .day-number { font-size: var(--text-xs); }
 }
+
+/* Las iniciales solo existen en movil. */
+.dia-corto { display: none; }
 
 /* En escritorio manda el clamp de arriba, que crece con la altura de la
    pantalla. Aqui solo se sube el SUELO: nunca por debajo de 120 px, para que
