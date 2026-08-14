@@ -1,8 +1,4 @@
 {% extends "base.html" %}
-{# `with context` NO es opcional: sin el, los macros importados no ven ni
-   csrf_token() ni REGLAS -- Jinja los importa en un espacio aislado -- y el
-   modal revienta con "'csrf_token' is undefined". #}
-{% from "admin/_modal_roles.html" import modales_usuario with context %}
 
 {% block title %}Gestion de usuarios · VibePlanner{% endblock %}
 {% block encabezado %}Gestion de usuarios{% endblock %}
@@ -106,36 +102,14 @@
               </td>
 
               <td class="celda-acciones" data-etiqueta="Acciones">
-                {% if has_permission('rol.asignar') %}
-                  <button class="btn btn--secondary btn--sm" type="button"
-                          data-abre-modal="modal-roles-{{ u.id }}">
-                    Roles<span class="solo-lectores"> de {{ u.username }}</span>
-                  </button>
-                {% endif %}
-
-                {% if has_permission('usuario.editar') %}
-                  <button class="btn btn--ghost btn--sm" type="button"
-                          data-abre-modal="modal-clave-{{ u.id }}">
-                    Contrasena<span class="solo-lectores"> de {{ u.username }}</span>
-                  </button>
-                {% endif %}
-
-                {% if has_permission('usuario.desactivar') %}
-                  {% if u.id == yo %}
-                    {# No existe el boton en tu propia fila: prevenir es mejor
-                       que explicar el error despues. #}
-                    <span class="btn btn--ghost btn--sm" aria-disabled="true"
-                          title="No puedes desactivar tu propia cuenta">
-                      Desactivar
-                    </span>
-                  {% else %}
-                    <button class="btn {{ 'btn--danger' if u.is_active else 'btn--secondary' }} btn--sm"
-                            type="button" data-abre-modal="modal-estado-{{ u.id }}">
-                      {{ "Desactivar" if u.is_active else "Reactivar" }}<span
-                        class="solo-lectores"> la cuenta de {{ u.username }}</span>
-                    </button>
-                  {% endif %}
-                {% endif %}
+                {# Un solo enlace por fila. Antes habia tres botones que abrian
+                   tres <dialog> cada uno: con 50 cuentas, 150 dialogos en el
+                   DOM y siete casillas compartiendo el mismo id. Todo eso vive
+                   ahora en la pantalla de la cuenta. #}
+                <a class="btn btn--secondary btn--sm"
+                   href="{{ url_for('admin.usuario_detalle', user_id=u.id) }}">
+                  Gestionar<span class="solo-lectores"> la cuenta de {{ u.username }}</span>
+                </a>
               </td>
 
             </tr>
@@ -183,15 +157,11 @@
   {% endif %}
 
   {# ------------------------------------------------------------------
-     Dialogos. Van al final del documento para que el orden de tabulacion
-     de la tabla no los atraviese.
+     El unico dialogo de la pantalla: el alta. Va al final del documento
+     para que el orden de tabulacion de la tabla no lo atraviese.
      ------------------------------------------------------------------ #}
   {% if has_permission('usuario.crear') %}
     {% include "admin/_form_usuario.html" %}
   {% endif %}
-
-  {% for u in usuarios %}
-    {{ modales_usuario(u, catalogo_roles, yo) }}
-  {% endfor %}
 
 {% endblock %}

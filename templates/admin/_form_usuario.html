@@ -39,7 +39,8 @@
             #}
             {{ casilla_rol(rol.code, rol.name, rol.description,
                            marcada=(rol.code == 'usuario'),
-                           bloqueada=(rol.code == 'usuario')) }}
+                           bloqueada=(rol.code == 'usuario'),
+                           prefijo="nueva") }}
           {% endfor %}
         </div>
 

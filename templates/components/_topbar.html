@@ -1,31 +1,109 @@
 {#
-  Barra superior.
+  Barra superior con menu de cuenta.
+  --------------------------------------------------------------------------
   H1 (visibilidad del estado): quien mira la pantalla ve SIEMPRE con que
   cuenta entro y que roles lleva. Que el usuario tenga que adivinar con que
   cuenta esta es una de las formas mas faciles de que borre algo por error.
+
+  El menu no es solo comodidad: en movil la barra inferior solo muestra 5
+  modulos, asi que SIN ESTE MENU no habria forma de llegar a Mi perfil ni a
+  la administracion desde un telefono.
+
+  Patron de accesibilidad: es un DESPLEGABLE (disclosure), no un role="menu".
+  Un role="menu" le promete al lector de pantalla navegacion con flechas, y
+  prometerla sin implementarla es peor que no usarla. Aqui son enlaces
+  normales dentro de un <nav>, que se recorren con Tab como el resto.
 #}
 <header class="topbar">
   <a class="topbar-marca" href="{{ url_for('home.index') }}">
     <span>VibePlanner</span>
   </a>
 
-  <div class="topbar-usuario">
-    <span class="usuario-nombre">{{ usuario_actual.username }}</span>
+  <div class="menu-cuenta">
+    <button class="menu-cuenta-disparador"
+            type="button"
+            id="menu-cuenta-boton"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="menu-cuenta-panel">
+      <span class="menu-cuenta-avatar" aria-hidden="true">
+        {{ usuario_actual.username[0]|upper }}
+      </span>
+      <span class="menu-cuenta-nombre">{{ usuario_actual.username }}</span>
+      <svg class="menu-cuenta-flecha" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+      <span class="solo-lectores">Abrir el menu de tu cuenta</span>
+    </button>
 
-    {# Los roles como insignias con su nombre legible: "Administrador", no
-       `admin`. La pantalla habla el idioma del usuario, no el de la tabla. #}
-    <span class="badge-grupo">
-      {% for rol in roles_actuales %}
-        <span class="badge badge--rol-{{ rol.code }}">{{ rol.name }}</span>
-      {% endfor %}
-    </span>
+    <nav class="menu-cuenta-panel"
+         id="menu-cuenta-panel"
+         aria-labelledby="menu-cuenta-boton"
+         hidden>
 
-    {# Logout por POST, nunca por GET: un <img src="/logout"> en cualquier
-       otra pagina cerraria la sesion sola. #}
-    <form method="post" action="{{ url_for('auth.logout') }}" class="sin-margen">
-      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <button class="btn btn--ghost btn--sm" type="submit"
-              style="color: var(--text-on-dark);">Salir</button>
-    </form>
+      <div class="menu-cuenta-cabecera">
+        <strong>{{ usuario_actual.full_name or usuario_actual.username }}</strong>
+        <span class="text-muted">{{ usuario_actual.email }}</span>
+
+        {# Los roles con su nombre legible: "Administrador", no `admin`. #}
+        <span class="badge-grupo" style="margin-top: var(--space-2);">
+          {% for rol in roles_actuales %}
+            <span class="badge badge--rol-{{ rol.code }}">{{ rol.name }}</span>
+          {% endfor %}
+        </span>
+      </div>
+
+      <div class="menu-cuenta-separador"></div>
+
+      {#
+        Cada entrada se filtra por PERMISO, no por nombre de rol: el dia que
+        exista un rol `soporte` con `usuario.listar`, le aparece sola.
+
+        Y es cortesia visual, no seguridad: la ruta sigue protegida por
+        @requires y responde 403 aunque se escriba la URL a mano (TC-07).
+      #}
+      {% if has_permission('perfil.ver') %}
+        <a class="menu-cuenta-item" href="{{ url_for('perfil.ver') }}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.1a7.5 7.5 0 0 1 15 0A17.9 17.9 0 0 1 12 21.75c-2.7 0-5.2-.6-7.5-1.65z"/>
+          </svg>
+          <span>Mi perfil</span>
+        </a>
+      {% endif %}
+
+      {% if has_permission('usuario.listar') %}
+        <a class="menu-cuenta-item" href="{{ url_for('admin.usuarios') }}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 18.7a9.4 9.4 0 0 0 3.7-.9 4.1 4.1 0 0 0-7.5-2.5M15 19.1v.1A12.3 12.3 0 0 1 8.6 21c-2.3 0-4.5-.6-6.4-1.8a6.4 6.4 0 0 1 12-3.1M12 6.4a3.4 3.4 0 1 1-6.8 0 3.4 3.4 0 0 1 6.8 0zm8.3 2.2a2.6 2.6 0 1 1-5.3 0 2.6 2.6 0 0 1 5.3 0z"/>
+          </svg>
+          <span>Gestion de usuarios</span>
+        </a>
+      {% endif %}
+
+      <div class="menu-cuenta-separador"></div>
+
+      {#
+        Salir es un FORMULARIO POST, nunca un enlace. Un <img src="/logout">
+        en cualquier otra pagina cerraria la sesion sola, y los navegadores
+        ademas precargan enlaces.
+      #}
+      <form method="post" action="{{ url_for('auth.logout') }}" class="sin-margen">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="menu-cuenta-item menu-cuenta-item--salir" type="submit">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
+          </svg>
+          <span>Cerrar sesion</span>
+        </button>
+      </form>
+    </nav>
   </div>
 </header>

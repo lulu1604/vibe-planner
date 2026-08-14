@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% from "components/_field.html" import campo, casilla_rol %}
+
+{#
+  Mantenimiento de UNA cuenta.
+  --------------------------------------------------------------------------
+  Cuatro bloques, uno por cosa que se puede hacer: datos, roles, contrasena y
+  estado. Cada uno es su propio <form> contra su propia ruta, con su propio
+  permiso -- listar no implica editar, y editar no implica asignar roles.
+
+  Todos los formularios llevan `volver=detalle` para regresar aqui en vez de
+  al listado. El servidor lo compara contra ese literal exacto, nunca hace
+  redirect() de lo que venga en el campo.
+#}
+
+{% block title %}{{ usuario.username }} · Gestion de usuarios{% endblock %}
+{% block encabezado %}{{ usuario.username }}{% endblock %}
+
+{% block subtitulo %}
+  <p>
+    {{ usuario.full_name or "Sin nombre completo" }} ·
+    {% if usuario.is_active %}
+      <span class="badge badge--activa">Activa</span>
+    {% else %}
+      <span class="badge badge--inactiva">Desactivada</span>
+    {% endif %}
+    {% if usuario.id == yo %}
+      <span class="badge badge--tu">es tu cuenta</span>
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block acciones %}
+  <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">
+    Volver al listado
+  </a>
+{% endblock %}
+
+{% block content %}
+
+  <div style="display:grid; gap:var(--space-6);
+              grid-template-columns:repeat(auto-fit, minmax(20rem, 1fr));">
+
+    {# ================================================================
+       1. Datos
+       ================================================================ #}
+    <div class="card">
+      <h2 class="card-titulo">Datos de la cuenta</h2>
+
+      <form method="post" action="{{ url_for('admin.editar_datos', user_id=usuario.id) }}"
+            novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="field">
+          <label class="field-etiqueta" for="campo-username-fijo">Nombre de usuario</label>
+          {# No se edita, y se dice por que: un campo bloqueado sin explicacion
+             se lee como un fallo de la aplicacion. #}
+          <input class="field-control" id="campo-username-fijo" type="text"
+                 value="{{ usuario.username }}" disabled>
+          <span class="field-ayuda">
+            No se puede cambiar: es la identidad con la que entra y con la que
+            la ven los demas.
+          </span>
+        </div>
+
+        {% if has_permission('usuario.editar') %}
+          {{ campo("full_name", REGLAS.full_name, datos, errores, requerido=false) }}
+          {{ campo("email", REGLAS.email, datos, errores, tipo="email") }}
+
+          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
+            Guardar datos
+          </button>
+        {% else %}
+          <div class="field">
+            <span class="field-etiqueta">Nombre completo</span>
+            <p>{{ usuario.full_name or "—" }}</p>
+          </div>
+          <div class="field">
+            <span class="field-etiqueta">Correo</span>
+            <p>{{ usuario.email }}</p>
+          </div>
+        {% endif %}
+      </form>
+    </div>
+
+    {# ================================================================
+       2. Roles
+       ================================================================ #}
+    {% if has_permission('rol.asignar') %}
+      <div class="card">
+        <h2 class="card-titulo">Roles</h2>
+
+        <form method="post" action="{{ url_for('admin.cambiar_roles', user_id=usuario.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="volver" value="detalle">
+
+          <div class="field-casillas">
+            {% for rol in catalogo_roles %}
+              {# `prefijo` unico por pantalla: dos macros con el mismo id
+                 hacen que un <label for=...> apunte al elemento equivocado. #}
+              {{ casilla_rol(rol.code, rol.name, rol.description,
+                             marcada=(rol.code in roles_de_la_cuenta),
+                             bloqueada=(rol.code == 'usuario'),
+                             prefijo="detalle") }}
+            {% endfor %}
+          </div>
+
+          <p class="field-ayuda" style="margin:var(--space-3) 0;">
+            Los permisos son la <strong>suma</strong> de todos los roles. El
+            cambio surte efecto en la siguiente pagina que cargue esta persona,
+            sin que tenga que cerrar sesion.
+          </p>
+
+          {% if usuario.id == yo %}
+            <div class="alert alert--info" style="margin-bottom:var(--space-3);">
+              <span>Esta es tu cuenta. Si te quitas Administrador y eres el
+                    ultimo, el sistema no te dejara guardarlo.</span>
+            </div>
+          {% endif %}
+
+          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
+            Guardar roles
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
+    {# ================================================================
+       3. Contrasena
+       ================================================================ #}
+    {% if has_permission('usuario.editar') %}
+      <div class="card">
+        <h2 class="card-titulo">Contrasena</h2>
+
+        <form method="post"
+              action="{{ url_for('admin.restablecer_password', user_id=usuario.id) }}"
+              novalidate>
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="volver" value="detalle">
+
+          {# RESTABLECER, no recuperar. Lo guardado es un hash y no se puede
+             revertir: eso es exactamente lo que se quiere. #}
+          <p class="text-muted" style="margin-bottom:var(--space-4);">
+            La contrasena actual no se puede consultar: esta cifrada. Escribe
+            una nueva y comunicasela a {{ usuario.username }} por un medio
+            seguro.
+          </p>
+
+          <div class="field">
+            <label class="field-etiqueta" for="campo-clave-nueva">Nueva contrasena</label>
+            <input class="field-control" id="campo-clave-nueva" name="password"
+                   type="password" required
+                   minlength="{{ REGLAS.password.min }}"
+                   maxlength="{{ REGLAS.password.max }}"
+                   autocomplete="new-password"
+                   aria-describedby="ayuda-clave-nueva">
+            <span class="field-ayuda" id="ayuda-clave-nueva">{{ REGLAS.password.ayuda }}</span>
+          </div>
+
+          <button class="btn btn--secondary" type="submit" data-enviando="Guardando...">
+            Restablecer contrasena
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
+    {# ================================================================
+       4. Estado
+       ================================================================ #}
+    {% if has_permission('usuario.desactivar') %}
+      <div class="card">
+        <h2 class="card-titulo">Estado de la cuenta</h2>
+
+        {% if usuario.id == yo %}
+          {# Prevenir antes que explicar: el boton no existe en tu propia
+             cuenta, no aparece y luego te dice que no. #}
+          <p class="text-muted">
+            No puedes desactivar tu propia cuenta. Pideselo a otro
+            administrador.
+          </p>
+
+        {% elif usuario.is_active %}
+          <p style="margin-bottom:var(--space-4);">
+            La cuenta esta <strong>activa</strong>. Al desactivarla no podra
+            iniciar sesion, pero <strong>sus tareas y eventos no se borran</strong>
+            y puedes reactivarla cuando quieras.
+          </p>
+          <button class="btn btn--danger" type="button"
+                  data-abre-modal="modal-desactivar">
+            Desactivar cuenta
+          </button>
+
+        {% else %}
+          <p style="margin-bottom:var(--space-4);">
+            La cuenta esta <strong>desactivada</strong>. Al reactivarla volvera
+            a entrar con su contrasena de siempre y recuperara todo lo que
+            tenia.
+          </p>
+          <form method="post"
+                action="{{ url_for('admin.cambiar_estado', user_id=usuario.id) }}"
+                class="sin-margen">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="volver" value="detalle">
+            <input type="hidden" name="is_active" value="1">
+            <button class="btn btn--primary" type="submit" data-enviando="Reactivando...">
+              Reactivar cuenta
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  {# ================================================================
+     Permisos efectivos: documentacion viva del modelo agregativo
+     ================================================================ #}
+  <div class="card" style="margin-top:var(--space-6);">
+    <h2 class="card-titulo">Permisos efectivos</h2>
+    <p class="text-muted" style="margin-bottom:var(--space-4);">
+      Los {{ permisos|length }} permisos que tiene esta cuenta ahora mismo,
+      como union de sus roles. Es lo que comprueba el servidor en cada peticion.
+    </p>
+    <details>
+      <summary style="cursor:pointer; font-weight:600; color:var(--teal-700);">
+        Ver la lista completa
+      </summary>
+      <ul style="display:flex; flex-wrap:wrap; gap:var(--space-2);
+                 margin-top:var(--space-3);">
+        {% for permiso in permisos %}
+          <li class="badge badge--activa text-data">{{ permiso }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  </div>
+
+  {# ================================================================
+     Confirmacion de lo destructivo
+     ================================================================ #}
+  {% if has_permission('usuario.desactivar') and usuario.is_active and usuario.id != yo %}
+    <dialog class="modal" id="modal-desactivar" aria-labelledby="titulo-desactivar">
+      <form method="post" action="{{ url_for('admin.cambiar_estado', user_id=usuario.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="volver" value="detalle">
+        <input type="hidden" name="is_active" value="0">
+
+        <div class="modal-cabecera">
+          {# La confirmacion repite el nombre y dice QUE va a pasar. Un
+             "Estas seguro?" no informa de nada y se pulsa "Si" por reflejo. #}
+          <h2 id="titulo-desactivar">Desactivar la cuenta de {{ usuario.username }}?</h2>
+          <button class="modal-cerrar" type="button" aria-label="Cerrar"
+                  data-cierra-modal>&times;</button>
+        </div>
+
+        <div class="modal-cuerpo">
+          <p>No podra iniciar sesion mientras este desactivada.</p>
+          <p><strong>Sus tareas y eventos no se borran</strong> y puedes
+             reactivarla cuando quieras desde esta misma pantalla.</p>
+        </div>
+
+        <div class="modal-pie">
+          <button class="btn btn--secondary" type="button" data-cierra-modal>Cancelar</button>
+          <button class="btn btn--danger" type="submit" data-enviando="Desactivando...">
+            Desactivar cuenta
+          </button>
+        </div>
+      </form>
+    </dialog>
+  {% endif %}
+
+{% endblock %}

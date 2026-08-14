@@ -72,7 +72,55 @@
   }
 
   /* -------------------------------------------------------------------
-     3. Aviso de campo ya tomado (solo en el panel de administracion)
+     3. Menu de cuenta de la barra superior
+     Patron "disclosure": un boton con aria-expanded que ensena u oculta
+     un panel. Se cierra de tres formas -- volver a pulsar, Escape y clic
+     fuera -- y Escape DEVUELVE EL FOCO al boton, que es lo que siempre
+     se olvida y lo que deja a quien navega con teclado perdido en el
+     principio del documento.
+     ------------------------------------------------------------------- */
+  var disparador = document.getElementById("menu-cuenta-boton");
+  var panel = document.getElementById("menu-cuenta-panel");
+
+  if (disparador && panel) {
+    var abrirMenu = function (abierto) {
+      disparador.setAttribute("aria-expanded", abierto ? "true" : "false");
+      panel.hidden = !abierto;
+    };
+
+    disparador.addEventListener("click", function (evento) {
+      evento.stopPropagation();
+      abrirMenu(disparador.getAttribute("aria-expanded") !== "true");
+    });
+
+    // Los clics DENTRO del panel no cuentan como "fuera": sin esto, pulsar
+    // un enlace del menu lo cerraria antes de que el navegador lo siguiera.
+    panel.addEventListener("click", function (evento) {
+      evento.stopPropagation();
+    });
+
+    document.addEventListener("click", function () {
+      abrirMenu(false);
+    });
+
+    document.addEventListener("keydown", function (evento) {
+      if (evento.key !== "Escape") return;
+      if (disparador.getAttribute("aria-expanded") !== "true") return;
+      abrirMenu(false);
+      disparador.focus();
+    });
+
+    // Salir del menu con Tab tambien lo cierra: dejarlo abierto detras
+    // mientras el foco esta en otra parte de la pagina desorienta.
+    panel.addEventListener("focusout", function (evento) {
+      if (!panel.contains(evento.relatedTarget) && evento.relatedTarget !== disparador) {
+        abrirMenu(false);
+      }
+    });
+  }
+
+  /* -------------------------------------------------------------------
+     4. Aviso de campo ya tomado (solo en el panel de administracion)
      La comprobacion al salir del campo evita rellenar todo el formulario
      para descubrir al enviarlo que el usuario ya existia.
 
