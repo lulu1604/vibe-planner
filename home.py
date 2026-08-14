@@ -52,7 +52,10 @@ MODULOS = [
         "etiqueta": "Calendario",
         "descripcion": "Tus eventos del mes y tus invitaciones.",
         "permiso": "calendario.ver",
-        "endpoint": "calendario.mes",
+        # `index`, no `month_view`: index redirige al mes actual y no necesita
+        # argumentos. url_for("calendar_bp.month_view") sin year/month lanzaria
+        # BuildError y, como el menu vive en base.html, se caeria TODA pantalla.
+        "endpoint": "calendar_bp.index",
         "icono": ("M6.75 3v2.25M17.25 3v2.25M3.75 7.5h16.5M4.5 5.25h15a.75.75 0 0 1 .75.75"
                   "v13.5a.75.75 0 0 1-.75.75h-15a.75.75 0 0 1-.75-.75V6a.75.75 0 0 1 .75-.75z"),
     },

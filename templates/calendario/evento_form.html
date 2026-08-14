@@ -1,106 +1,193 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Editar Evento' if event else 'Nuevo Evento' }}{% endblock %}
+{#
+  Alta y edicion de evento (US11).
+  --------------------------------------------------------------------------
+  Reescrita sobre el design system: la version anterior usaba clases de
+  Tailwind (`w-full px-3 py-2 border rounded-lg`, `btn-primary`, `text-gray-700`)
+  que este proyecto no tiene, asi que el formulario salia sin estilo.
+
+  Dos cosas mas que se corrigieron:
+  - El borrado usaba `confirm()` del navegador. El design system lo prohibe:
+    bloquea la pagina, no se puede estilar y no dice que va a pasar. Ahora es
+    un <dialog> que lo explica.
+  - Los colores eran solo circulos. El color nunca es la unica senal: ahora
+    cada uno lleva su nombre.
+#}
+
+{% set nombres_color = {
+  "#2F4156": "Azul noche",
+  "#567C8D": "Azul acero",
+  "#C8D9E6": "Azul claro",
+  "#D7707F": "Rosa",
+  "#9DA3A4": "Gris",
+  "#4C4D53": "Gris oscuro"
+} %}
+
+{% block title %}{{ 'Editar evento' if event else 'Nuevo evento' }} · VibePlanner{% endblock %}
+{% block encabezado %}{{ 'Editar evento' if event else 'Nuevo evento' }}{% endblock %}
+
+{% block acciones %}
+  <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">Volver al calendario</a>
+{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-gray-200">
-    <h2 class="text-xl font-bold text-navy-900 mb-4">
-        {{ '✏️ Editar Evento' if event else '➕ Crear Nuevo Evento' }}
-    </h2>
 
-    <form method="POST" action="{{ url_for('calendar_bp.edit_event', event_id=event.id) if event else url_for('calendar_bp.create_event') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<div class="card" style="max-width: 42rem;">
+  <form method="post" novalidate
+        action="{{ url_for('calendar_bp.edit_event', event_id=event.id) if event
+                  else url_for('calendar_bp.create_event') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Título del Evento</label>
-            <input type="text" name="title" value="{{ event.title if event else (form.title if form else '') }}" required
-                   class="w-full px-3 py-2 border rounded-lg focus:ring focus:ring-blue-200" placeholder="Ej: Reunión de Coordinación">
-        </div>
+    <div class="field">
+      <label class="field-etiqueta" for="campo-titulo">Titulo del evento</label>
+      <input class="field-control" id="campo-titulo" name="title" type="text"
+             value="{{ event.title if event else (form.title if form else '') }}"
+             required maxlength="120" autofocus>
+    </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Descripción (Opcional)</label>
-            <textarea name="description" rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring focus:ring-blue-200"
-                      placeholder="Detalles sobre el evento...">{{ event.description if event else (form.description if form else '') }}</textarea>
-        </div>
+    <div class="field">
+      <label class="field-etiqueta" for="campo-desc">
+        Descripcion <span class="opcional">(opcional)</span>
+      </label>
+      <textarea class="field-control" id="campo-desc" name="description" rows="3"
+                maxlength="500">{{ event.description if event else (form.description if form else '') }}</textarea>
+    </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha Inicio</label>
-                <input type="date" name="start_date" value="{{ event.start_at.split(' ')[0] if event else (default_date if default_date else '') }}" required
-                       class="w-full px-3 py-2 border rounded-lg">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Hora Inicio</label>
-                <input type="time" name="start_time" value="{{ event.start_at.split(' ')[1] if event else '09:00' }}" required
-                       class="w-full px-3 py-2 border rounded-lg">
-            </div>
-        </div>
+    <div style="display:grid; gap:var(--space-4);
+                grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));">
+      <div class="field">
+        <label class="field-etiqueta" for="campo-fecha-inicio">Fecha de inicio</label>
+        <input class="field-control" id="campo-fecha-inicio" name="start_date" type="date"
+               value="{{ event.start_at.split(' ')[0] if event else (default_date or '') }}"
+               required>
+      </div>
+      <div class="field">
+        <label class="field-etiqueta" for="campo-hora-inicio">Hora de inicio</label>
+        <input class="field-control" id="campo-hora-inicio" name="start_time" type="time"
+               value="{{ event.start_at.split(' ')[1] if event else '09:00' }}" required>
+      </div>
+      <div class="field">
+        <label class="field-etiqueta" for="campo-fecha-fin">Fecha de fin</label>
+        <input class="field-control" id="campo-fecha-fin" name="end_date" type="date"
+               value="{{ event.end_at.split(' ')[0] if event else (default_date or '') }}"
+               required>
+      </div>
+      <div class="field">
+        <label class="field-etiqueta" for="campo-hora-fin">Hora de fin</label>
+        <input class="field-control" id="campo-hora-fin" name="end_time" type="time"
+               value="{{ event.end_at.split(' ')[1] if event else '10:00' }}"
+               required aria-describedby="ayuda-fin">
+        <span class="field-ayuda" id="ayuda-fin">
+          Tiene que ser posterior a la hora de inicio.
+        </span>
+      </div>
+    </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha Fin</label>
-                <input type="date" name="end_date" value="{{ event.end_at.split(' ')[0] if event else (default_date if default_date else '') }}" required
-                       class="w-full px-3 py-2 border rounded-lg">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Hora Fin</label>
-                <input type="time" name="end_time" value="{{ event.end_at.split(' ')[1] if event else '10:00' }}" required
-                       class="w-full px-3 py-2 border rounded-lg">
-            </div>
-        </div>
+    <fieldset style="border:0; padding:0; margin:0 0 var(--space-4);">
+      <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-2);">
+        Color del evento
+      </legend>
+      <div class="field-casillas" style="flex-direction:row; flex-wrap:wrap;">
+        {% for color in allowed_colors %}
+          <label class="casilla" style="grid-template-columns:auto auto; align-items:center;"
+                 for="color-{{ loop.index }}">
+            <input type="radio" id="color-{{ loop.index }}" name="color" value="{{ color }}"
+                   {{ 'checked' if (event and event.color == color)
+                      or (not event and loop.first) }}>
+            <span>
+              <span aria-hidden="true" style="display:inline-block; width:16px; height:16px;
+                    border-radius:var(--radius-pill); vertical-align:middle;
+                    background:{{ color }}; border:1px solid var(--border-strong);"></span>
+              <span class="casilla-desc">{{ nombres_color.get(color, color) }}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
 
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Color Visual</label>
-            <div class="flex gap-3">
-                {% for color in allowed_colors %}
-                    <label class="cursor-pointer">
-                        <input type="radio" name="color" value="{{ color }}"
-                               {{ 'checked' if (event and event.color == color) or (not event and loop.first) }}>
-                        <span class="inline-block w-8 h-8 rounded-full border border-gray-300" style="background-color: {{ color }};"></span>
-                    </label>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="flex justify-between items-center mt-6">
-            <a href="{{ url_for('calendar_bp.index') }}" class="btn btn-secondary">Cancelar</a>
-            <div class="flex gap-2">
-                {% if event %}
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                {% else %}
-                    <button type="submit" class="btn btn-primary">Crear Evento</button>
-                {% endif %}
-            </div>
-        </div>
-    </form>
-
-    {% if event %}
-        <div class="border-t pt-4 mt-6 flex justify-between items-center">
-            <form method="POST" action="{{ url_for('calendar_bp.generate_invite_link', event_id=event.id) }}" id="invite-form">
-                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-                <button type="button" id="btn-invite" class="btn btn-outline">🔗 Generar Link de Invitación</button>
-            </form>
-
-            <form method="POST" action="{{ url_for('calendar_bp.delete_event', event_id=event.id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este evento?');">
-                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-danger">🗑️ Eliminar Evento</button>
-            </form>
-        </div>
-        <div id="invite-result" class="mt-3 hidden p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm"></div>
-    {% endif %}
+    <div class="btn-fila">
+      <button class="btn btn--primary" type="submit"
+              data-enviando="{{ 'Guardando...' if event else 'Creando...' }}">
+        {{ 'Guardar cambios' if event else 'Crear evento' }}
+      </button>
+      {# H3: cancelar siempre visible, al lado de guardar. #}
+      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">Cancelar</a>
+    </div>
+  </form>
 </div>
 
-<script>
-document.getElementById('btn-invite')?.addEventListener('click', async function() {
-    const form = document.getElementById('invite-form');
-    const formData = new FormData(form);
-    const res = await fetch(form.action, { method: 'POST', body: formData });
-    const data = await res.json();
-    const resultDiv = document.getElementById('invite-result');
-    if (data.invite_url) {
-        resultDiv.innerHTML = `<strong>Link de invitación:</strong><br><input type="text" readonly value="${data.invite_url}" class="w-full p-2 border mt-1 rounded bg-white" onclick="this.select()">`;
-        resultDiv.classList.remove('hidden');
-    }
-});
-</script>
+{% if event %}
+  {# ------------------------------------------------------------------
+     Invitaciones (US12)
+     ------------------------------------------------------------------ #}
+  <div class="card" style="max-width:42rem; margin-top:var(--space-6);">
+    <h2 class="card-titulo">Invitar a este evento</h2>
+    <p class="text-muted" style="margin-bottom:var(--space-4);">
+      Genera un link y compartelo por donde quieras. No se envia ningun correo:
+      quien lo abra tendra que iniciar sesion para aceptar.
+    </p>
+
+    <form method="post" id="invite-form"
+          action="{{ url_for('calendar_bp.generate_invite_link', event_id=event.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn--secondary" type="button" id="btn-invite">
+        Generar link de invitacion
+      </button>
+    </form>
+
+    {# Lo rellena calendario.js. `aria-live` hace que el lector de pantalla
+       anuncie el link en cuanto aparece. #}
+    <div id="invite-result" role="status" aria-live="polite"
+         style="margin-top:var(--space-4);"></div>
+  </div>
+
+  {# ------------------------------------------------------------------
+     Eliminar
+     ------------------------------------------------------------------ #}
+  {% if has_permission('evento.eliminar') %}
+    <div class="card" style="max-width:42rem; margin-top:var(--space-6);">
+      <h2 class="card-titulo">Eliminar evento</h2>
+      <p class="text-muted" style="margin-bottom:var(--space-4);">
+        Se borra para ti y para quienes aceptaron la invitacion. No se puede
+        deshacer.
+      </p>
+      <button class="btn btn--danger" type="button" data-abre-modal="modal-borrar-evento">
+        Eliminar evento
+      </button>
+    </div>
+
+    <dialog class="modal" id="modal-borrar-evento" aria-labelledby="titulo-borrar">
+      <form method="post"
+            action="{{ url_for('calendar_bp.delete_event', event_id=event.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="modal-cabecera">
+          {# La confirmacion repite el nombre y dice que va a pasar. #}
+          <h2 id="titulo-borrar">Eliminar «{{ event.title }}»?</h2>
+          <button class="modal-cerrar" type="button" aria-label="Cerrar"
+                  data-cierra-modal>&times;</button>
+        </div>
+
+        <div class="modal-cuerpo">
+          <p>Desaparecera de tu calendario y del de quienes aceptaron la
+             invitacion.</p>
+          <p><strong>Esta accion no se puede deshacer.</strong></p>
+        </div>
+
+        <div class="modal-pie">
+          <button class="btn btn--secondary" type="button" data-cierra-modal>Cancelar</button>
+          <button class="btn btn--danger" type="submit" data-enviando="Eliminando...">
+            Eliminar evento
+          </button>
+        </div>
+      </form>
+    </dialog>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
 {% endblock %}

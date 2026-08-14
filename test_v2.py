@@ -294,6 +294,208 @@ def main():
               "Gestion de usuarios" in html_admin
               and "Gestion de usuarios" not in html_piero)
 
+    print("\n--- BLOQUE C: calendario e invitaciones (US11, US12) ---")
+
+    # Dos cuentas limpias y activas para este bloque. `lucero` quedo
+    # desactivada en TC-05 y `piero` con el correo ya cambiado, asi que se
+    # crean aparte para que los asserts de aqui no dependan de los de arriba.
+    with app.app_context():
+        db = database.raw_connection()
+        cal_jose = repo_users.create_user(
+            {"username": "josec", "email": "josec@esan.pe", "password": "Vibe2026!",
+             "full_name": "Jose Cabrera"}, ["usuario"], conn=db)
+        cal_ana = repo_users.create_user(
+            {"username": "anac", "email": "anac@esan.pe", "password": "Vibe2026!",
+             "full_name": "Ana Cusi"}, ["usuario"], conn=db)
+        db.close()
+
+    jose_cli = _cliente(app); _entrar(jose_cli, "josec", "Vibe2026!")
+    ana_cli = _cliente(app); _entrar(ana_cli, "anac", "Vibe2026!")
+
+    # --- TC-25: el evento cae en su dia ----------------------------------
+    r = _post(jose_cli, "/eventos/nuevo", title="Examen de IoT",
+              description="Aula 302",
+              start_date="2026-08-27", start_time="09:00",
+              end_date="2026-08-27", end_time="11:00", color="#567C8D")
+    comprobar("TC-25   crear un evento redirige (302)", r.status_code == 302, r.status_code)
+
+    html = jose_cli.get("/calendario/2026/8").get_data(as_text=True)
+    comprobar("TC-25   aparece en la cuadricula con su titulo", "Examen de IoT" in html)
+    comprobar("TC-25   ...con su hora de inicio", "09:00" in html)
+    comprobar("TC-25   ...y con su color", "#567C8D" in html)
+
+    # --- TC-26: navegacion entre meses Y entre anos ----------------------
+    html = jose_cli.get("/calendario/2026/12").get_data(as_text=True)
+    comprobar("TC-26   diciembre enlaza a enero del ano siguiente",
+              "/calendario/2027/1" in html)
+    html = jose_cli.get("/calendario/2026/1").get_data(as_text=True)
+    comprobar("TC-26   enero enlaza a diciembre del anterior",
+              "/calendario/2025/12" in html)
+    comprobar("TC-26   un mes de 28 dias renderiza",
+              jose_cli.get("/calendario/2026/2").status_code == 200)
+    html = jose_cli.get("/calendario/2026/9").get_data(as_text=True)
+    comprobar("TC-26   el evento de agosto NO se cuela en septiembre",
+              "Examen de IoT" not in html)
+
+    # --- TC-27: horario incoherente --------------------------------------
+    def _contar(titulo):
+        with app.app_context():
+            db = database.raw_connection()
+            n = db.execute("SELECT COUNT(*) c FROM events WHERE title = ?",
+                           (titulo,)).fetchone()["c"]
+            db.close()
+        return n
+
+    r = _post(jose_cli, "/eventos/nuevo", title="Fin antes del inicio",
+              start_date="2026-08-20", start_time="15:00",
+              end_date="2026-08-20", end_time="14:00", color="#567C8D")
+    cuerpo = r.get_data(as_text=True)
+    comprobar("TC-27   fin < inicio no revienta con 500", r.status_code != 500, r.status_code)
+    comprobar("TC-27   ...lo explica en pantalla", "posterior a la de inicio" in cuerpo)
+    comprobar("TC-27   ...y no inserta nada", _contar("Fin antes del inicio") == 0)
+
+    r = _post(jose_cli, "/eventos/nuevo", title="Fin igual al inicio",
+              start_date="2026-08-20", start_time="15:00",
+              end_date="2026-08-20", end_time="15:00", color="#567C8D")
+    comprobar("TC-27   fin == inicio tambien se rechaza",
+              r.status_code != 500 and _contar("Fin igual al inicio") == 0)
+
+    # --- TC-28: el calendario de otro no se ve nunca ---------------------
+    html = ana_cli.get("/calendario/2026/8").get_data(as_text=True)
+    comprobar("TC-28   ana no ve ningun evento de jose", "Examen de IoT" not in html)
+
+    # --- Propiedad != permiso: ana tiene evento.editar, pero no es suyo --
+    with app.app_context():
+        db = database.raw_connection()
+        ev_id = db.execute("SELECT id FROM events WHERE title='Examen de IoT'").fetchone()["id"]
+        db.close()
+
+    comprobar("TC-08   editar un evento ajeno responde 404, no 403",
+              ana_cli.get(f"/eventos/{ev_id}/editar").status_code == 404)
+    _post(ana_cli, f"/eventos/{ev_id}/eliminar")
+    comprobar("TC-08   ...y borrarlo no lo borra", _contar("Examen de IoT") == 1)
+    r = _post(ana_cli, f"/eventos/{ev_id}/invitar")
+    comprobar("TC-08   ...ni puede generar un link de invitacion (404)",
+              r.status_code == 404, r.status_code)
+
+    # --- TC-29: invitar y aceptar ----------------------------------------
+    r = _post(jose_cli, f"/eventos/{ev_id}/invitar")
+    token = r.get_json()["token"] if r.status_code == 200 else None
+    comprobar("TC-29   el anfitrion genera un token", token is not None and len(token) > 20)
+    comprobar("        el token no es un id incremental",
+              token is not None and not token.isdigit())
+
+    r = _post(ana_cli, f"/invitacion/{token}/aceptar")
+    comprobar("TC-29   ana acepta (302)", r.status_code == 302, r.status_code)
+    html = ana_cli.get("/calendario/2026/8").get_data(as_text=True)
+    comprobar("TC-29   el evento aparece en el calendario de ana", "Examen de IoT" in html)
+    comprobar("TC-29   ...marcado como invitada por el anfitrion", "josec" in html)
+
+    html = ana_cli.get(f"/invitacion/{token}").get_data(as_text=True)
+    comprobar("TC-29   el contador muestra 1 invitado, sin contar al anfitrion",
+              "1 invitado" in html, "el anfitrion se estaba sumando a si mismo")
+
+    # --- TC-30: token invalido no filtra nada ----------------------------
+    html = ana_cli.get("/invitacion/token-inventado-123").get_data(as_text=True)
+    comprobar("TC-30   token invalido no revela el titulo", "Examen de IoT" not in html)
+    comprobar("TC-30   ...ni el anfitrion", "josec" not in html)
+    comprobar("TC-30   ...ni la fecha", "2026-08-27" not in html)
+    comprobar("TC-30   ...y lo dice con un mensaje util", "cancelada" in html)
+
+    # --- TC-32: aceptar dos veces es idempotente -------------------------
+    def _aceptadas():
+        with app.app_context():
+            db = database.raw_connection()
+            n = db.execute(
+                "SELECT COUNT(*) c FROM event_invitations "
+                "WHERE event_id = ? AND status = 'accepted'", (ev_id,)).fetchone()["c"]
+            db.close()
+        return n
+
+    antes = _aceptadas()
+    _post(ana_cli, f"/invitacion/{token}/aceptar")
+    comprobar("TC-32   aceptar dos veces no crea otra fila", _aceptadas() == antes,
+              f"{antes} -> {_aceptadas()}")
+    html = ana_cli.get(f"/invitacion/{token}").get_data(as_text=True)
+    comprobar("TC-32   ...y el contador sigue en 1", "1 invitado" in html)
+
+    # --- TC-31: la invitacion exige sesion y devuelve al destino ---------
+    anon = _cliente(app)
+    r = anon.get(f"/invitacion/{token}")
+    comprobar("TC-31   sin sesion redirige al login (302)", r.status_code == 302, r.status_code)
+    r = _post(anon, "/login", username="anac", password="Vibe2026!")
+    destino = r.headers.get("Location") or ""
+    comprobar("TC-31   ...y tras entrar VUELVE SOLO a la invitacion",
+              token in destino, f"fue a {destino}")
+
+    # --- TC-07 aplicado al calendario: el permiso manda ------------------
+    #
+    # ESTE ES EL ASSERT QUE FALTABA. El modulo se entrego con @login_required
+    # en las 8 rutas, asi que los 5 permisos de calendario estaban sembrados y
+    # no los comprobaba nadie: un administrador podia quitarlos y no pasaba
+    # nada. Sin esta comprobacion, la regresion vuelve en silencio.
+    def _permiso_del_rol(codigo, poner):
+        with app.app_context():
+            db = database.raw_connection()
+            if poner:
+                db.execute(
+                    "INSERT INTO role_permissions (role_id, permission_id) "
+                    "SELECT (SELECT id FROM roles WHERE code='usuario'), "
+                    "       (SELECT id FROM permissions WHERE code=?) "
+                    "ON CONFLICT (role_id, permission_id) DO NOTHING", (codigo,))
+            else:
+                db.execute(
+                    "DELETE FROM role_permissions "
+                    "WHERE role_id = (SELECT id FROM roles WHERE code='usuario') "
+                    "  AND permission_id = (SELECT id FROM permissions WHERE code=?)",
+                    (codigo,))
+            db.commit()
+            db.close()
+
+    _permiso_del_rol("calendario.ver", poner=False)
+    comprobar("TC-07   sin `calendario.ver` el calendario da 403",
+              jose_cli.get("/calendario/2026/8").status_code == 403,
+              jose_cli.get("/calendario/2026/8").status_code)
+    _permiso_del_rol("calendario.ver", poner=True)
+
+    _permiso_del_rol("evento.crear", poner=False)
+    r = _post(jose_cli, "/eventos/nuevo", title="No deberia entrar",
+              start_date="2026-08-29", start_time="10:00",
+              end_date="2026-08-29", end_time="11:00", color="#567C8D")
+    comprobar("TC-07   sin `evento.crear` no se puede crear un evento (403)",
+              r.status_code == 403 and _contar("No deberia entrar") == 0, r.status_code)
+    _permiso_del_rol("evento.crear", poner=True)
+
+    _permiso_del_rol("invitacion.responder", poner=False)
+    comprobar("TC-07   sin `invitacion.responder` no se ve la invitacion (403)",
+              ana_cli.get(f"/invitacion/{token}").status_code == 403)
+    _permiso_del_rol("invitacion.responder", poner=True)
+
+    # --- Transversales del modulo ----------------------------------------
+    sin_csrf = _cliente(app); _entrar(sin_csrf, "josec", "Vibe2026!")
+    r = sin_csrf.post("/eventos/nuevo", data={"title": "sin csrf",
+                                              "start_date": "2026-08-30"})
+    comprobar("        POST de evento sin token CSRF -> 400", r.status_code == 400,
+              r.status_code)
+
+    _post(jose_cli, "/eventos/nuevo", title="Color inyectado",
+          start_date="2026-08-31", start_time="10:00",
+          end_date="2026-08-31", end_time="11:00",
+          color="red; background:url(javascript:alert(1))")
+    with app.app_context():
+        db = database.raw_connection()
+        fila = db.execute("SELECT color FROM events WHERE title='Color inyectado'").fetchone()
+        db.close()
+    comprobar("        un color fuera de la paleta no entra a la base",
+              fila is not None and fila["color"] in (
+                  "#2F4156", "#567C8D", "#C8D9E6", "#D7707F", "#9DA3A4", "#4C4D53"),
+              fila["color"] if fila else "no se creo el evento")
+
+    html = jose_cli.get("/inicio").get_data(as_text=True)
+    comprobar("        el menu enlaza el calendario de verdad",
+              "/calendario" in html,
+              "home.py apunta a un endpoint que no existe y sale 'Proximamente'")
+
     print("\n--- Transversales ---")
 
     # --- CSRF -------------------------------------------------------------

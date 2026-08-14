@@ -250,14 +250,19 @@ def accept_invitation(token, user_id):
 
 
 def count_attendees(event_id):
-    """Cuenta el número total de asistentes confirmados (anfitrión + invitados que aceptaron)."""
+    """
+    Invitados que ACEPTARON. No incluye al anfitrión.
+
+    Antes devolvía `1 + invitados`, sumándose el anfitrión a sí mismo, y eso
+    contradice el plan de pruebas: TC-29 dice "el panel de piero muestra
+    1 asistente confirmado" tras aceptar ana, y TC-32 dice "el contador sigue
+    en 1" al aceptar dos veces. Con el anfitrión dentro mostraba 2.
+    """
     db = database.get_db()
-    count_invited = db.execute(
+    return db.execute(
         """
         SELECT COUNT(*) FROM event_invitations
         WHERE event_id = ? AND status = 'accepted' AND invited_user_id IS NOT NULL
         """,
         (event_id,)
     ).fetchone()[0]
-
-    return 1 + count_invited  # 1 del anfitrión + los invitados aceptados

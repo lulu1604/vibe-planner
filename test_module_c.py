@@ -23,6 +23,7 @@ import database
 import repo_events
 import repo_users
 import security
+import seed
 
 
 class TestModuleCCalendar(unittest.TestCase):
@@ -37,6 +38,18 @@ class TestModuleCCalendar(unittest.TestCase):
         app.config["TESTING"] = True
         cls.app_context = app.app_context()
         cls.app_context.push()
+
+        # Sembrar permisos y roles ANTES de crear cuentas.
+        # Sin esto la tabla `roles` esta vacia, create_user(..., ("usuario",))
+        # no enlaza ningun rol y los usuarios de prueba acaban con CERO
+        # permisos. Da igual mientras esta suite solo llame al repositorio,
+        # pero convierte el archivo en algo que no puede probar una ruta:
+        # cualquier @requires respondería 403 y pareceria un fallo del codigo.
+        conexion = database.raw_connection()
+        seed.sembrar_permisos(conexion)
+        seed.sembrar_roles(conexion)
+        conexion.commit()
+        conexion.close()
 
         # Crear cuentas de prueba para TC-28 y TC-29
         cls.user_jose_id = repo_users.create_user({"username": "jose_test", "email": "jose@test.com", "password": "Password123"}, ("usuario",))
@@ -164,7 +177,11 @@ class TestModuleCCalendar(unittest.TestCase):
         count2 = repo_events.count_attendees(event_id)
 
         self.assertEqual(count1, count2)
-        self.assertEqual(count2, 2)
+        # 1, no 2. count_attendees() cuenta los invitados que ACEPTARON, sin
+        # sumar al anfitrion: TC-29 dice "el panel de piero muestra 1 asistente
+        # confirmado" y TC-32 "el contador sigue en 1". La expectativa de 2
+        # venia de que el repositorio devolvia `1 + invitados`.
+        self.assertEqual(count2, 1)
 
 
 if __name__ == "__main__":

@@ -211,12 +211,22 @@ def _correr_pruebas():
     app.config["TESTING"] = True
     cliente = app.test_client()
 
+    # TODO POST lleva token CSRF: la lista de exenciones de security.py esta
+    # vacia y asi debe quedarse. Se planta en la sesion del cliente de pruebas
+    # y se anade al formulario base, que es exactamente lo que hace el
+    # navegador con el <input type="hidden" name="_csrf"> de las plantillas.
+    # Los 11 asserts siguen probando lo mismo que probaban.
+    CSRF = "token-de-prueba"
+    with cliente.session_transaction() as sesion:
+        sesion["_csrf"] = CSRF
+
     def total_tareas():
         with app.app_context():
             return len(database.get_tasks())
 
     base = {"title": "Tarea valida", "due_date": "2026-08-20",
-            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45"}
+            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45",
+            "_csrf": CSRF}
 
     def enviar(**cambios):
         datos = dict(base)

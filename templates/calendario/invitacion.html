@@ -1,40 +1,81 @@
 {% extends "base.html" %}
 
-{% block title %}Invitación a Evento{% endblock %}
+{#
+  Pantalla de aceptacion de invitacion (US12).
+  --------------------------------------------------------------------------
+  Reescrita sobre el design system; antes usaba clases de Tailwind que este
+  proyecto no tiene.
+
+  LA RAMA DEL ERROR NO FILTRA NADA (TC-30). Ni titulo, ni fecha, ni anfitrion:
+  con un token inventado, un desconocido no puede averiguar si ese evento
+  existe ni de quien es. Por eso el `{% if error %}` va ANTES y no comparte
+  ningun dato con la otra rama.
+#}
+
+{% block title %}Invitacion a un evento · VibePlanner{% endblock %}
+{% block encabezado %}
+  {{ "Invitacion no disponible" if error else "Te invitaron a un evento" }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200 text-center mt-10">
-    {% if error %}
-        <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            <span class="text-3xl block mb-2">⚠️</span>
-            <h3 class="font-bold text-lg">Invitación no disponible</h3>
-            <p class="text-sm mt-1">{{ error }}</p>
-        </div>
-        <div class="mt-6">
-            <a href="{{ url_for('calendar_bp.index') }}" class="btn btn-primary">Ir a mi Calendario</a>
-        </div>
-    {% else %}
-        <div class="mb-4">
-            <span class="inline-block p-3 bg-blue-100 rounded-full text-blue-600 text-2xl mb-2">🎉</span>
-            <h2 class="text-xl font-bold text-navy-900">{{ invitation.title }}</h2>
-            <p class="text-sm text-gray-500 mt-1">Invitación de <strong class="text-navy-700">{{ invitation.anfitrion_nombre or invitation.anfitrion }}</strong></p>
-        </div>
 
-        <div class="bg-gray-50 p-4 rounded-lg text-left text-sm mb-6 border">
-            <p class="mb-2"><strong>🗓️ Inicio:</strong> {{ invitation.start_at }}</p>
-            <p class="mb-2"><strong>⌛ Fin:</strong> {{ invitation.end_at }}</p>
-            {% if invitation.description %}
-                <p class="mb-2"><strong>📝 Detalles:</strong> {{ invitation.description }}</p>
-            {% endif %}
-            <p class="mt-2 text-xs text-gray-400">👥 {{ attendees_count }} asistente(s) confirmado(s)</p>
-        </div>
+<div class="card" style="max-width: 34rem;">
+  {% if error %}
+    <div class="alert alert--error" role="alert" style="margin-bottom: var(--space-4);">
+      <span>{{ error }}</span>
+    </div>
+    <p class="text-muted" style="margin-bottom: var(--space-4);">
+      Puede que el link este mal copiado o que quien te invito haya cancelado
+      la invitacion. Pidesela de nuevo.
+    </p>
+    <a class="btn btn--primary" href="{{ url_for('calendar_bp.index') }}">
+      Ir a mi calendario
+    </a>
 
-        <form method="POST" action="{{ url_for('calendar_bp.accept_invitation', token=token) }}">
-            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-primary w-full py-3 text-base font-bold">
-                ✅ Aceptar Invitación e Incluir en mi Calendario
-            </button>
-        </form>
+  {% else %}
+    <h2 class="card-titulo">{{ invitation.title }}</h2>
+    <p class="text-muted" style="margin-bottom: var(--space-6);">
+      Te invita <strong>{{ invitation.anfitrion_nombre or invitation.anfitrion }}</strong>
+    </p>
+
+    <dl class="pila-2" style="margin-bottom: var(--space-6);">
+      <div class="fila-entre">
+        <dt class="field-etiqueta">Empieza</dt>
+        <dd class="text-data sin-margen">{{ invitation.start_at }}</dd>
+      </div>
+      <div class="fila-entre">
+        <dt class="field-etiqueta">Termina</dt>
+        <dd class="text-data sin-margen">{{ invitation.end_at }}</dd>
+      </div>
+      <div class="fila-entre">
+        <dt class="field-etiqueta">Ya confirmaron</dt>
+        {# En una sola linea a proposito: partirla mete un salto entre el
+           numero y la palabra, y "1 invitado" deja de leerse como una frase
+           (y de encontrarse al buscarla). #}
+        <dd class="sin-margen">{{ attendees_count }} {{ "invitado" if attendees_count == 1 else "invitados" }}</dd>
+      </div>
+    </dl>
+
+    {% if invitation.description %}
+      <div class="field">
+        <span class="field-etiqueta">Detalles</span>
+        <p>{{ invitation.description }}</p>
+      </div>
     {% endif %}
+
+    <form method="post"
+          action="{{ url_for('calendar_bp.accept_invitation', token=token) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn--primary btn--bloque" type="submit"
+              data-enviando="Aceptando...">
+        Aceptar y agregar a mi calendario
+      </button>
+    </form>
+
+    <p class="field-ayuda" style="margin-top: var(--space-3);">
+      Aceptar dos veces no pasa nada: solo se guarda una.
+    </p>
+  {% endif %}
 </div>
+
 {% endblock %}

@@ -37,14 +37,14 @@ def _current_local_year_month():
 
 
 @calendar_bp.route("/calendario")
-@security.login_required
+@security.requires("calendario.ver")
 def index():
     year, month = _current_local_year_month()
     return redirect(url_for("calendar_bp.month_view", year=year, month=month))
 
 
 @calendar_bp.route("/calendario/<int:year>/<int:month>")
-@security.login_required
+@security.requires("calendario.ver")
 def month_view(year, month):
     if month < 1 or month > 12 or year < 2000 or year > 2100:
         year, month = _current_local_year_month()
@@ -92,12 +92,16 @@ def month_view(year, month):
         next_month=next_month,
         month_cal=month_cal,
         events_by_date=events_by_date,
-        allowed_colors=ALLOWED_COLORS
+        allowed_colors=ALLOWED_COLORS,
+        # Para marcar la celda de hoy. Se calcula aqui y no en la plantilla:
+        # cero logica de negocio dentro de {{ }}.
+        hoy=datetime.now().strftime("%Y-%m-%d"),
+        seccion_activa="calendario",
     )
 
 
 @calendar_bp.route("/eventos/nuevo", methods=["GET", "POST"])
-@security.login_required
+@security.requires("evento.crear")
 def create_event():
     user_id = security.current_user_id()
 
@@ -149,7 +153,7 @@ def create_event():
 
 
 @calendar_bp.route("/eventos/<int:event_id>/editar", methods=["GET", "POST"])
-@security.login_required
+@security.requires("evento.editar")
 def edit_event(event_id):
     user_id = security.current_user_id()
     event = repo_events.get_owned(event_id, user_id)
@@ -193,7 +197,7 @@ def edit_event(event_id):
 
 
 @calendar_bp.route("/eventos/<int:event_id>/eliminar", methods=["POST"])
-@security.login_required
+@security.requires("evento.eliminar")
 def delete_event(event_id):
     user_id = security.current_user_id()
     if repo_events.delete_owned(event_id, user_id):
@@ -205,12 +209,16 @@ def delete_event(event_id):
 
 
 @calendar_bp.route("/eventos/<int:event_id>/invitar", methods=["POST"])
-@security.login_required
+@security.requires("evento.editar")
 def generate_invite_link(event_id):
+    """Invitar es gestionar TU evento: por eso pide `evento.editar`."""
     user_id = security.current_user_id()
     event = repo_events.get_owned(event_id, user_id)
     if not event:
-        return jsonify({"error": "No tienes permiso sobre este evento"}), 403
+        # 404, no 403. Un 403 confirmaria que ese evento existe y permitiria
+        # recorrer los ids ajenos preguntando uno por uno. Para quien pregunta,
+        # lo que no es suyo simplemente no existe.
+        return jsonify({"error": "No encontrado"}), 404
 
     token = repo_events.create_invitation(event_id)
     invite_url = url_for("calendar_bp.view_invitation", token=token, _external=True)
@@ -218,8 +226,11 @@ def generate_invite_link(event_id):
 
 
 @calendar_bp.route("/invitacion/<token>")
-@security.login_required
+@security.requires("invitacion.responder")
 def view_invitation(token):
+    # @requires aplica @login_required por dentro, asi que TC-31 sigue en pie:
+    # el decorador guarda session["next"] y auth.login devuelve aqui despues
+    # de entrar. No hay que reimplementar nada de eso.
     invitation = repo_events.get_event_by_token(token)
     if not invitation:
         # TC-30: Token inválido no revela nada del evento ni del anfitrión
@@ -236,7 +247,7 @@ def view_invitation(token):
 
 
 @calendar_bp.route("/invitacion/<token>/aceptar", methods=["POST"])
-@security.login_required
+@security.requires("invitacion.responder")
 def accept_invitation(token):
     user_id = security.current_user_id()
     invitation = repo_events.get_event_by_token(token)

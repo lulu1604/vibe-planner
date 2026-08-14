@@ -13,9 +13,33 @@ a avisar al grupo ANTES, porque rompe codigo de otras tres personas.
     has_permission("codigo")        -> bool
     @login_required
     @requires("codigo", ...)
-    csrf_token()                    -> str      (para las plantillas)
+    current_roles()                 -> list[dict]   (solo para PINTAR)
+    csrf_token()                    -> str          (para las plantillas)
     validate_csrf()                 -> bool
     init_app(app)                   (lo llama app.py una vez)
+
+COMO SE USA EN UNA RUTA
+    @calendar_bp.route("/calendario")
+    @requires("calendario.ver")         # llave 1: el permiso
+    def mes():
+        user_id = current_user_id()     # llave 2: el filtro DENTRO del WHERE
+        ...
+
+Las dos llaves son necesarias. El decorador dice "puedes ver calendarios"; el
+user_id dentro del WHERE dice "el tuyo". Con solo la primera, cualquiera con
+`calendario.ver` lee los datos de todos.
+
+@requires comprueba PERMISOS, nunca nombres de rol, y nunca se sustituye por
+@login_required "porque total, todos lo tienen": un permiso que no se comprueba
+en ningun sitio es un permiso que el administrador cree que puede quitar y no
+puede. Si manana existe un rol `soporte` con `usuario.listar`, con @requires
+entra solo; con @login_required no hay forma de expresarlo.
+
+Y en las plantillas:
+    {% if has_permission('usuario.listar') %} ... {% endif %}
+Eso es CORTESIA VISUAL, no seguridad: oculta el boton, no protege la ruta. La
+ruta la protege @requires en el servidor, y sigue protegida aunque alguien
+escriba la URL a mano.
 """
 
 import functools
@@ -33,18 +57,30 @@ CSRF_FIELD = "_csrf"
 
 METODOS_SEGUROS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
-# Exenciones de CSRF
-CSRF_EXENTAS = frozenset({
-    "add_task_route",
-    "delete_task_route",
-    "update_status_route",
-})
+# Exenciones de CSRF. ESTA VACIA, Y ASI DEBE QUEDARSE.
+#
+# Existio brevemente para las 3 rutas de tareas de la v1, cuyos formularios no
+# tenian token. Al actualizar esa pantalla a la v2 se les anadio y la lista se
+# quedo sin nada dentro, que es donde tiene que estar.
+#
+# Un merge posterior la reintrodujo y `POST /tasks` volvio a aceptarse sin
+# token: las plantillas YA mandan el token, asi que la exencion no aportaba
+# nada y solo reabria el agujero. Si manana un formulario "necesita" entrar
+# aqui, lo que hay que arreglar es el formulario.
+CSRF_EXENTAS = frozenset()
 
 
 # --------------------------------------------------------------------------
 # Quien es el que pregunta
 # --------------------------------------------------------------------------
 def current_user():
+    """
+    La cuenta de la sesion, o None.
+
+    Se cachea en `g`, que dura UNA peticion. Si la cuenta se desactivo o se
+    borro entre dos clics, la sesion se cierra aqui mismo: la cookie sigue
+    siendo valida criptograficamente, pero la cuenta ya no.
+    """
     if "usuario" not in g:
         g.usuario = None
         user_id = session.get(SESSION_USER_KEY)
@@ -63,6 +99,16 @@ def current_user_id():
 
 
 def effective_permissions():
+    """
+    La union de los permisos de todos los roles de la cuenta.
+
+    SE CACHEAN EN `g`, JAMAS EN LA SESION. Es la decision de seguridad mas
+    importante de este archivo: si vivieran en la cookie, quitarle el rol
+    `admin` a alguien no tendria ningun efecto hasta que cerrara sesion, y
+    mientras tanto seguiria administrando el sistema con una cookie caducada
+    en la practica. `g` dura una peticion, asi que el cambio se nota en la
+    siguiente recarga (TC-09).
+    """
     if "permisos" not in g:
         usuario = current_user()
         g.permisos = repo_users.get_permissions(usuario["id"]) if usuario else set()
@@ -74,6 +120,14 @@ def has_permission(codigo):
 
 
 def current_roles():
+    """
+    Los roles de la cuenta, para PINTARLOS ("Usuario", "Administrador").
+
+    Solo para mostrar. Ninguna decision de acceso mira esta lista: para eso
+    esta has_permission(). Si alguien empieza a escribir
+    `if 'admin' in current_roles()`, la tabla de permisos deja de servir para
+    nada y volvemos a tener el rol incrustado en el codigo.
+    """
     if "roles" not in g:
         usuario = current_user()
         g.roles = repo_users.get_roles(usuario["id"]) if usuario else []
@@ -116,6 +170,10 @@ def csrf_token():
 
 
 def validate_csrf():
+    """
+    `compare_digest` en vez de `==` para no filtrar por tiempo cuantos
+    caracteres iniciales acerto quien lo esta adivinando.
+    """
     esperado = session.get(SESSION_CSRF_KEY) or ""
     enviado = request.form.get(CSRF_FIELD) or request.headers.get("X-CSRF-Token") or ""
     if not esperado or not enviado:
