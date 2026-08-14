@@ -1,143 +1,137 @@
 {% extends "base.html" %}
 
-{% block title %}Calendario Mensual — {{ month_name }} {{ year }}{% endblock %}
+{#
+  Cuadricula mensual (US11).
+  --------------------------------------------------------------------------
+  Reescrita sobre el design system del proyecto. La version anterior usaba
+  clases de Tailwind (`flex-between`, `mb-4`, `text-gray-500`, `btn-primary`...)
+  que aqui no existen: el proyecto no usa Tailwind ni ningun CDN, asi que esas
+  clases no pintaban nada y la pantalla salia sin estilo.
+
+  Tambien usa ahora los bloques de base.html (`encabezado`, `subtitulo`,
+  `acciones`) en vez de repetir su propia cabecera, para que el calendario se
+  vea igual que el resto de pantallas.
+#}
+
+{% block title %}Calendario · {{ month_name }} {{ year }}{% endblock %}
+{% block encabezado %}{{ month_name }} {{ year }}{% endblock %}
+
+{% block subtitulo %}
+  <p>Tus eventos y aquellos a los que aceptaste una invitacion.</p>
+{% endblock %}
+
+{% block acciones %}
+  {# Una sola accion primaria por pantalla; la navegacion es secundaria. #}
+  {% if has_permission('evento.crear') %}
+    <a class="btn btn--primary" href="{{ url_for('calendar_bp.create_event') }}">
+      Nuevo evento
+    </a>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="calendar-container">
-    <header class="calendar-header flex-between mb-4">
-        <div>
-            <h1 class="text-2xl font-bold text-navy-900">📅 {{ month_name }} {{ year }}</h1>
-            <p class="text-sm text-gray-500">Planificación mensual de eventos y actividades</p>
-        </div>
 
-        <div class="flex-gap">
-            <a href="{{ url_for('calendar_bp.month_view', year=prev_year, month=prev_month) }}" class="btn btn-secondary">
-                &larr; {{ prev_month }}/{{ prev_year }}
-            </a>
-            <a href="{{ url_for('calendar_bp.index') }}" class="btn btn-outline">Hoy</a>
-            <a href="{{ url_for('calendar_bp.month_view', year=next_year, month=next_month) }}" class="btn btn-secondary">
-                {{ next_month }}/{{ next_year }} &rarr;
-            </a>
-            <a href="{{ url_for('calendar_bp.create_event') }}" class="btn btn-primary">
-                + Nuevo Evento
-            </a>
-        </div>
-    </header>
+{# Los data-* los lee calendario.js para moverse con las flechas del teclado.
+   Si el JS no carga, los enlaces de abajo siguen funcionando igual. #}
+<div class="calendar-container"
+     data-calendario
+     data-mes-anterior="{{ url_for('calendar_bp.month_view', year=prev_year, month=prev_month) }}"
+     data-mes-siguiente="{{ url_for('calendar_bp.month_view', year=next_year, month=next_month) }}">
 
-    <div class="calendar-grid">
-        <div class="calendar-day-header">Lun</div>
-        <div class="calendar-day-header">Mar</div>
-        <div class="calendar-day-header">Mié</div>
-        <div class="calendar-day-header">Jue</div>
-        <div class="calendar-day-header">Vie</div>
-        <div class="calendar-day-header">Sáb</div>
-        <div class="calendar-day-header">Dom</div>
+  <nav class="fila-entre" style="margin-bottom: var(--space-4);"
+       aria-label="Navegacion entre meses">
+    <a class="btn btn--secondary btn--sm"
+       href="{{ url_for('calendar_bp.month_view', year=prev_year, month=prev_month) }}"
+       rel="prev">
+      &larr; <span class="solo-lectores">Mes anterior: </span>{{ prev_month }}/{{ prev_year }}
+    </a>
 
-        {% for week in month_cal %}
-            {% for day in week %}
-                {% if day == 0 %}
-                    <div class="calendar-cell calendar-cell-empty"></div>
-                {% else %}
-                    {% set date_str = "%04d-%02d-%02d"|format(year, month, day) %}
-                    {% set day_events = events_by_date.get(date_str, []) %}
-                    <div class="calendar-cell">
-                        <div class="calendar-cell-day flex-between">
-                            <span class="day-number">{{ day }}</span>
-                            <a href="{{ url_for('calendar_bp.create_event', date=date_str) }}" class="add-event-btn" title="Agregar evento">+</a>
-                        </div>
-                        <div class="calendar-events-list">
-                            {% for ev in day_events[:3] %}
-                                <div class="event-chip" style="background-color: {{ ev.color }};">
-                                    <a href="{{ url_for('calendar_bp.edit_event', event_id=ev.id) if ev.origen == 'propio' else '#' }}" class="event-title text-white">
-                                        {{ ev.start_at.split(' ')[1] }} {{ ev.title }}
-                                        {% if ev.origen == 'invitado' %}
-                                            <span class="badge-guest" title="Invitado por {{ ev.anfitrion }}">👤</span>
-                                        {% endif %}
-                                    </a>
-                                </div>
-                            {% endfor %}
-                            {% if day_events|length > 3 %}
-                                <div class="more-events-badge">+{{ day_events|length - 3 }} más</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        {% endfor %}
-    </div>
+    <a class="btn btn--ghost btn--sm" href="{{ url_for('calendar_bp.index') }}">Hoy</a>
+
+    <a class="btn btn--secondary btn--sm"
+       href="{{ url_for('calendar_bp.month_view', year=next_year, month=next_month) }}"
+       rel="next">
+      <span class="solo-lectores">Mes siguiente: </span>{{ next_month }}/{{ next_year }} &rarr;
+    </a>
+  </nav>
+
+  <div class="calendar-grid" role="grid"
+       aria-label="Dias de {{ month_name }} de {{ year }}">
+
+    {% for dia in ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"] %}
+      <div class="calendar-day-header" role="columnheader">{{ dia }}</div>
+    {% endfor %}
+
+    {% for week in month_cal %}
+      {% for day in week %}
+        {% if day == 0 %}
+          {# Relleno del mes vecino: no es un dia de este mes, no se anuncia. #}
+          <div class="calendar-cell calendar-cell-empty" aria-hidden="true"></div>
+        {% else %}
+          {% set date_str = "%04d-%02d-%02d"|format(year, month, day) %}
+          {% set day_events = events_by_date.get(date_str, []) %}
+
+          <div class="calendar-cell {{ 'calendar-cell-hoy' if date_str == hoy }}"
+               role="gridcell">
+            <div class="fila-entre">
+              <span class="day-number">
+                {{ day }}{% if date_str == hoy %}<span class="solo-lectores"> (hoy)</span>{% endif %}
+              </span>
+              {% if has_permission('evento.crear') %}
+                <a class="add-event-btn"
+                   href="{{ url_for('calendar_bp.create_event', date=date_str) }}">
+                  +<span class="solo-lectores"> Agregar evento el {{ day }} de {{ month_name }}</span>
+                </a>
+              {% endif %}
+            </div>
+
+            <div class="calendar-events-list">
+              {% for ev in day_events[:3] %}
+                {# El color va a una variable CSS y se pinta como borde
+                   izquierdo. De fondo con texto blanco era ilegible: sobre
+                   --sky (#C8D9E6) el blanco da 1.42:1. #}
+                <div class="event-chip" style="--color-evento: {{ ev.color }};">
+                  {% if ev.origen == 'propio' and has_permission('evento.editar') %}
+                    <a href="{{ url_for('calendar_bp.edit_event', event_id=ev.id) }}">
+                      <span class="text-data">{{ ev.start_at.split(' ')[1] }}</span>
+                      {{ ev.title }}
+                    </a>
+                  {% else %}
+                    <span class="text-data">{{ ev.start_at.split(' ')[1] }}</span>
+                    {{ ev.title }}
+                    {# El color nunca es la unica senal: los ajenos llevan texto. #}
+                    <span class="badge-guest" title="Invitado por {{ ev.anfitrion }}">
+                      · invitado por {{ ev.anfitrion }}
+                    </span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+
+              {% if day_events|length > 3 %}
+                <div class="more-events-badge">+{{ day_events|length - 3 }} mas</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 
-<style>
-.calendar-container {
-    padding: 1.5rem;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
-}
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-}
-.calendar-day-header {
-    text-align: center;
-    font-weight: 700;
-    color: #2F4156;
-    padding: 8px;
-    background: #C8D9E6;
-    border-radius: 8px;
-}
-.calendar-cell {
-    min-height: 110px;
-    background: #ffffff;
-    border: 1px solid #E5E7EB;
-    border-radius: 8px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-}
-.calendar-cell-empty {
-    background: #F3F4F6;
-    border-color: #E5E7EB;
-}
-.day-number {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #374151;
-}
-.add-event-btn {
-    font-size: 0.8rem;
-    color: #567C8D;
-    text-decoration: none;
-    font-weight: bold;
-}
-.calendar-events-list {
-    margin-top: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.event-chip {
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.event-chip a {
-    color: #ffffff;
-    text-decoration: none;
-}
-.badge-guest {
-    font-size: 0.7rem;
-    margin-left: 2px;
-}
-.more-events-badge {
-    font-size: 0.7rem;
-    color: #6B7280;
-    font-weight: bold;
-}
-</style>
+{% if not events_by_date %}
+  <div class="estado-vacio" style="margin-top: var(--space-6);">
+    <h3>Sin eventos este mes</h3>
+    <p>Crea el primero y aparecera en su dia.</p>
+    {% if has_permission('evento.crear') %}
+      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.create_event') }}">
+        Nuevo evento
+      </a>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{{ url_for('static', filename='js/calendario.js') }}" defer></script>
 {% endblock %}
