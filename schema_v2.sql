@@ -97,12 +97,39 @@ CREATE TABLE IF NOT EXISTS event_invitations (
 
 
 -- ---------------------------------------------------------------------
--- 7. Indices
+-- 7. MODULO B: Tareas del Planner y Kanban (Lucero Ayala)
+--    Extiende la tabla `tasks` de la v1 con user_id y kanban_column.
+--    CREATE TABLE IF NOT EXISTS es aditivo: no afecta la v1.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tasks_v2 (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id           INTEGER NOT NULL,
+    title             TEXT    NOT NULL,
+    description       TEXT    NOT NULL DEFAULT '',
+    category          TEXT    NOT NULL DEFAULT 'General',
+    priority_level    INTEGER NOT NULL DEFAULT 2,          -- 1 Alta, 2 Media, 3 Baja
+    due_date          TEXT    NOT NULL,                    -- YYYY-MM-DD
+    estimated_minutes INTEGER NOT NULL DEFAULT 30,
+    kanban_column     TEXT    NOT NULL DEFAULT 'todo',     -- backlog|todo|ongoing|done
+    start_time        TEXT    DEFAULT NULL,                -- HH:MM  (opcional, US8)
+    end_time          TEXT    DEFAULT NULL,                -- HH:MM  (opcional, US8)
+    assigned_by       INTEGER DEFAULT NULL,                -- user_id de quien asigno (US10)
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (kanban_column IN ('backlog','todo','ongoing','done')),
+    CHECK (priority_level IN (1, 2, 3)),
+    FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 8. Indices
 -- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS ix_user_roles_role        ON user_roles(role_id);
 CREATE INDEX IF NOT EXISTS ix_role_permissions_perm  ON role_permissions(permission_id);
 CREATE INDEX IF NOT EXISTS ix_users_active           ON users(is_active);
 CREATE INDEX IF NOT EXISTS ix_events_owner_start     ON events(owner_id, start_at);
+CREATE INDEX IF NOT EXISTS ix_tasks_v2_user_date     ON tasks_v2(user_id, due_date);
+CREATE INDEX IF NOT EXISTS ix_tasks_v2_assigned_by   ON tasks_v2(assigned_by);
 
 -- Un usuario no puede aceptar dos veces el mismo evento (TC-32).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_invitation_event_user
