@@ -197,6 +197,11 @@ def score_breakdown_route(task_id):
     available = _leer_minutos_disponibles()
     task = database.get_task_by_id(task_id)
     if task is None:
+        import repo_tasks, security
+        user_id = security.current_user_id()
+        if user_id:
+            task = repo_tasks.get_owned(task_id, user_id)
+    if task is None:
         return jsonify({"error": "not found"}), 404
     total, breakdown = scoring.calculate_score(task, available)
     return jsonify({"id": task_id, "total": total, "breakdown": breakdown})

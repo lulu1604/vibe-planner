@@ -39,17 +39,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let data;
       try {
-        const res = await fetch(
-          `/api/task/${id}/score-breakdown?available=${available}`
+        let res = await fetch(
+          `/v2/api/task/${id}/score-breakdown?available=${available}`
         );
+        if (!res.ok) {
+          res = await fetch(
+            `/api/task/${id}/score-breakdown?available=${available}`
+          );
+        }
         if (!res.ok) throw new Error(res.status);
         data = await res.json();
       } catch (e) {
-        // Sin red o tarea borrada en otra pestana: se dice, no se deja el
-        // modal con los datos de la tarea anterior.
         totalEl.textContent = "No pudimos calcular el desglose";
         listEl.innerHTML =
-          "<li class='text-muted'>Recarga la pagina e intentalo otra vez.</li>";
+          "<li class='text-muted'>Recarga la página e inténtalo otra vez.</li>";
         modal.showModal();
         return;
       }
@@ -72,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const puntos = document.createElement("span");
         puntos.className = "text-data";
         puntos.style.fontWeight = "700";
-        // El signo hace que se lea como una suma, que es lo que es.
         puntos.textContent = `+${valor.puntos}`;
 
         fila.append(razon, puntos);
@@ -95,7 +97,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("modal-close")?.addEventListener("click", () => {
-    modal.close();
+  document.querySelectorAll("#modal-close, [data-cierra-modal]").forEach((el) => {
+    el.addEventListener("click", () => {
+      modal.close();
+    });
   });
 });

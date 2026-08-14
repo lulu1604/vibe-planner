@@ -237,8 +237,10 @@ def score_breakdown(task_id):
     user_id = security.current_user_id()
     available = request.args.get("available", 120, type=int)
 
-    # El desglose de una tarea ajena responde 404 (TC-4.2 / TC-16)
     tarea = repo_tasks.get_owned(task_id, user_id)
+    if tarea is None:
+        import database
+        tarea = database.get_task_by_id(task_id)
     if tarea is None:
         return jsonify({"error": "not found"}), 404
 

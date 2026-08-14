@@ -285,12 +285,4 @@
 
 {% block extra_js %}
   <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
-  <script>
-  // Sobrescribir el endpoint del score-breakdown para que apunte a /v2/
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.why-btn').forEach(btn => {
-      btn._scoreUrl = `/v2/api/task/${btn.dataset.taskId}/score-breakdown`;
-    });
-  });
-  </script>
 {% endblock %}
