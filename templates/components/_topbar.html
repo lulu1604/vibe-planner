@@ -35,7 +35,7 @@
            stroke-linejoin="round" aria-hidden="true">
         <path d="m6 9 6 6 6-6"/>
       </svg>
-      <span class="solo-lectores">Abrir el menu de tu cuenta</span>
+      <span class="solo-lectores">{{ t("Abrir el menu de tu cuenta") }}</span>
     </button>
 
     <nav class="menu-cuenta-panel"
@@ -50,7 +50,7 @@
         {# Los roles con su nombre legible: "Administrador", no `admin`. #}
         <span class="badge-grupo" style="margin-top: var(--space-2);">
           {% for rol in roles_actuales %}
-            <span class="badge badge--rol-{{ rol.code }}">{{ rol.name }}</span>
+            <span class="badge badge--rol-{{ rol.code }}">{{ t(rol.name) }}</span>
           {% endfor %}
         </span>
       </div>
@@ -71,7 +71,7 @@
                stroke-linejoin="round" aria-hidden="true">
             <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.5 20.1a7.5 7.5 0 0 1 15 0A17.9 17.9 0 0 1 12 21.75c-2.7 0-5.2-.6-7.5-1.65z"/>
           </svg>
-          <span>Mi perfil</span>
+          <span>{{ t("Mi perfil") }}</span>
         </a>
       {% endif %}
 
@@ -82,7 +82,7 @@
                stroke-linejoin="round" aria-hidden="true">
             <path d="M18 18.7a9.4 9.4 0 0 0 3.7-.9 4.1 4.1 0 0 0-7.5-2.5M15 19.1v.1A12.3 12.3 0 0 1 8.6 21c-2.3 0-4.5-.6-6.4-1.8a6.4 6.4 0 0 1 12-3.1M12 6.4a3.4 3.4 0 1 1-6.8 0 3.4 3.4 0 0 1 6.8 0zm8.3 2.2a2.6 2.6 0 1 1-5.3 0 2.6 2.6 0 0 1 5.3 0z"/>
           </svg>
-          <span>Gestion de usuarios</span>
+          <span>{{ t("Gestion de usuarios") }}</span>
         </a>
       {% endif %}
 
@@ -97,7 +97,7 @@
           <path d="M9.6 3.8c.2-.9 1-1.6 2-1.6h.9c1 0 1.8.7 2 1.6l.2 1c.5.2 1 .4 1.4.7l1-.4c.9-.4 1.9 0 2.4.8l.4.8c.5.8.3 1.9-.4 2.5l-.8.6a6 6 0 0 1 0 1.6l.8.6c.7.6.9 1.7.4 2.5l-.4.8c-.5.8-1.5 1.2-2.4.8l-1-.4c-.4.3-.9.5-1.4.7l-.2 1c-.2.9-1 1.6-2 1.6h-.9c-1 0-1.8-.7-2-1.6l-.2-1c-.5-.2-1-.4-1.4-.7l-1 .4c-.9.4-1.9 0-2.4-.8l-.4-.8c-.5-.8-.3-1.9.4-2.5l.8-.6a6 6 0 0 1 0-1.6l-.8-.6c-.7-.6-.9-1.7-.4-2.5l.4-.8c.5-.8 1.5-1.2 2.4-.8l1 .4c.4-.3.9-.5 1.4-.7l.2-1z"/>
           <circle cx="12" cy="12" r="2.8"/>
         </svg>
-        <span>Apariencia</span>
+        <span>{{ t("Apariencia") }}</span>
       </button>
 
       <div class="menu-cuenta-separador"></div>
@@ -115,7 +115,7 @@
                stroke-linejoin="round" aria-hidden="true">
             <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/>
           </svg>
-          <span>Cerrar sesion</span>
+          <span>{{ t("Cerrar sesion") }}</span>
         </button>
       </form>
     </nav>

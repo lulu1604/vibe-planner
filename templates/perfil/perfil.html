@@ -5,7 +5,7 @@
 {% block encabezado %}Mi perfil{% endblock %}
 
 {% block subtitulo %}
-  <p>Entraste como <strong>{{ usuario.username }}</strong>.</p>
+  <p>{{ t("Entraste como") }}<strong>{{ usuario.username }}</strong>.</p>
 {% endblock %}
 
 {% block content %}
@@ -17,32 +17,27 @@
        Datos
        ------------------------------------------------------------------ #}
     <div class="card">
-      <h2 class="card-titulo">Tus datos</h2>
+      <h2 class="card-titulo">{{ t("Tus datos") }}</h2>
 
       <form method="post" action="{{ url_for('perfil.guardar') }}" novalidate>
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
         <div class="field">
-          <label class="field-etiqueta" for="campo-usuario-fijo">Nombre de usuario</label>
+          <label class="field-etiqueta" for="campo-usuario-fijo">{{ t("Nombre de usuario") }}</label>
           {# Deshabilitado y explicado: es la identidad con la que entras y con
              la que te ven los demas. Un campo que no se puede cambiar y no
              dice por que se lee como un fallo. #}
           <input class="field-control" id="campo-usuario-fijo" type="text"
                  value="{{ usuario.username }}" disabled>
-          <span class="field-ayuda">
-            El nombre de usuario no se puede cambiar. Si necesitas otro, pideselo
-            a un administrador.
-          </span>
+          <span class="field-ayuda">{{ t("El nombre de usuario no se puede cambiar. Si necesitas otro, pideselo a un administrador.") }}</span>
         </div>
 
         {{ campo("full_name", REGLAS.full_name, datos, errores, requerido=false) }}
         {{ campo("email", REGLAS.email, datos, errores, tipo="email") }}
 
         <div class="btn-fila">
-          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
-            Guardar cambios
-          </button>
-          <a class="btn btn--secondary" href="{{ url_for('home.index') }}">Cancelar</a>
+          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">{{ t("Guardar cambios") }}</button>
+          <a class="btn btn--secondary" href="{{ url_for('home.index') }}">{{ t("Cancelar") }}</a>
         </div>
       </form>
     </div>
@@ -51,13 +46,13 @@
        Contrasena
        ------------------------------------------------------------------ #}
     <div class="card">
-      <h2 class="card-titulo">Cambiar contrasena</h2>
+      <h2 class="card-titulo">{{ t("Cambiar contrasena") }}</h2>
 
       <form method="post" action="{{ url_for('perfil.cambiar_password') }}" novalidate>
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
         <div class="field">
-          <label class="field-etiqueta" for="campo-actual">Contrasena actual</label>
+          <label class="field-etiqueta" for="campo-actual">{{ t("Contrasena actual") }}</label>
           <input class="field-control" id="campo-actual" name="password_actual"
                  type="password" required autocomplete="current-password"
                  {% if errores.get('password_actual') %}aria-invalid="true"
@@ -68,7 +63,7 @@
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="campo-nueva">Contrasena nueva</label>
+          <label class="field-etiqueta" for="campo-nueva">{{ t("Contrasena nueva") }}</label>
           <input class="field-control" id="campo-nueva" name="password"
                  type="password" required
                  minlength="{{ REGLAS.password.min }}"
@@ -82,9 +77,7 @@
           {% endif %}
         </div>
 
-        <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
-          Cambiar contrasena
-        </button>
+        <button class="btn btn--primary" type="submit" data-enviando="Guardando...">{{ t("Cambiar contrasena") }}</button>
       </form>
     </div>
   </div>
@@ -93,12 +86,9 @@
      Roles y permisos: documentacion viva del modelo agregativo
      ------------------------------------------------------------------ #}
   <div class="card" style="margin-top:var(--space-6);">
-    <h2 class="card-titulo">Tus roles y permisos</h2>
+    <h2 class="card-titulo">{{ t("Tus roles y permisos") }}</h2>
 
-    <p class="text-muted" style="margin-bottom:var(--space-4);">
-      Tus permisos son la <strong>suma</strong> de todos tus roles. Aqui puedes
-      ver exactamente que te permite hacer el sistema y por que.
-    </p>
+    <p class="text-muted" style="margin-bottom:var(--space-4);">{{ t("Tus permisos son la") }}<strong>{{ t("suma") }}</strong>{{ t("de todos tus roles. Aqui puedes ver exactamente que te permite hacer el sistema y por que.") }}</p>
 
     <div class="badge-grupo" style="margin-bottom:var(--space-4);">
       {% for rol in roles %}

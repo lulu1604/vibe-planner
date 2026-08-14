@@ -25,6 +25,7 @@ from datetime import date, timedelta
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 import metrics
+import i18n
 import repo_habits
 import security
 
@@ -180,10 +181,10 @@ def crear():
         repo_habits.create(datos, user_id)
     except ValueError as error:
         # El mensaje de ValueError ya está redactado para leerse tal cual.
-        flash(str(error), "error")
+        flash(i18n.t(str(error)), "error")
         return redirect(url_for("habitos.lista"))
 
-    flash("Hábito creado. Márcalo hoy para empezar la racha.", "ok")
+    flash(i18n.t("Hábito creado. Márcalo hoy para empezar la racha."), "ok")
     return redirect(url_for("habitos.lista"))
 
 
@@ -233,7 +234,7 @@ def registrar(habit_id):
     # (habit_id, log_date): nunca crea una segunda (TC-34).
     repo_habits.upsert_log(habit_id, hoy, valor, marcar)
 
-    flash("Marcado de hoy actualizado." if marcar else "Registro de hoy desmarcado.", "ok")
+    flash(i18n.t("Marcado de hoy actualizado.") if marcar else "Registro de hoy desmarcado.", "ok")
     return redirect(url_for("habitos.lista"))
 
 

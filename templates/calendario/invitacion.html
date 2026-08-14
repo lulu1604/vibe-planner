@@ -24,31 +24,25 @@
     <div class="alert alert--error" role="alert" style="margin-bottom: var(--space-4);">
       <span>{{ error }}</span>
     </div>
-    <p class="text-muted" style="margin-bottom: var(--space-4);">
-      Puede que el link este mal copiado o que quien te invito haya cancelado
-      la invitacion. Pidesela de nuevo.
-    </p>
-    <a class="btn btn--primary" href="{{ url_for('calendar_bp.index') }}">
-      Ir a mi calendario
-    </a>
+    <p class="text-muted" style="margin-bottom: var(--space-4);">{{ t("Puede que el link este mal copiado o que quien te invito haya cancelado la invitacion. Pidesela de nuevo.") }}</p>
+    <a class="btn btn--primary" href="{{ url_for('calendar_bp.index') }}">{{ t("Ir a mi calendario") }}</a>
 
   {% else %}
     <h2 class="card-titulo">{{ invitation.title }}</h2>
-    <p class="text-muted" style="margin-bottom: var(--space-6);">
-      Te invita <strong>{{ invitation.anfitrion_nombre or invitation.anfitrion }}</strong>
+    <p class="text-muted" style="margin-bottom: var(--space-6);">{{ t("Te invita") }}<strong>{{ invitation.anfitrion_nombre or invitation.anfitrion }}</strong>
     </p>
 
     <dl class="pila-2" style="margin-bottom: var(--space-6);">
       <div class="fila-entre">
-        <dt class="field-etiqueta">Empieza</dt>
+        <dt class="field-etiqueta">{{ t("Empieza") }}</dt>
         <dd class="text-data sin-margen">{{ invitation.start_at }}</dd>
       </div>
       <div class="fila-entre">
-        <dt class="field-etiqueta">Termina</dt>
+        <dt class="field-etiqueta">{{ t("Termina") }}</dt>
         <dd class="text-data sin-margen">{{ invitation.end_at }}</dd>
       </div>
       <div class="fila-entre">
-        <dt class="field-etiqueta">Ya confirmaron</dt>
+        <dt class="field-etiqueta">{{ t("Ya confirmaron") }}</dt>
         {# En una sola linea a proposito: partirla mete un salto entre el
            numero y la palabra, y "1 invitado" deja de leerse como una frase
            (y de encontrarse al buscarla). #}
@@ -58,7 +52,7 @@
 
     {% if invitation.description %}
       <div class="field">
-        <span class="field-etiqueta">Detalles</span>
+        <span class="field-etiqueta">{{ t("Detalles") }}</span>
         <p>{{ invitation.description }}</p>
       </div>
     {% endif %}
@@ -67,14 +61,10 @@
           action="{{ url_for('calendar_bp.accept_invitation', token=token) }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <button class="btn btn--primary btn--bloque" type="submit"
-              data-enviando="Aceptando...">
-        Aceptar y agregar a mi calendario
-      </button>
+              data-enviando="Aceptando...">{{ t("Aceptar y agregar a mi calendario") }}</button>
     </form>
 
-    <p class="field-ayuda" style="margin-top: var(--space-3);">
-      Aceptar dos veces no pasa nada: solo se guarda una.
-    </p>
+    <p class="field-ayuda" style="margin-top: var(--space-3);">{{ t("Aceptar dos veces no pasa nada: solo se guarda una.") }}</p>
   {% endif %}
 </div>
 

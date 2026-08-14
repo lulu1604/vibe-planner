@@ -10,7 +10,7 @@
 {% block title %}Kanban · VibePlanner{% endblock %}
 {% block encabezado %}Tablero Kanban{% endblock %}
 {% block subtitulo %}
-  <p class="text-muted">Arrastra las tarjetas entre columnas o usa los botones.</p>
+  <p class="text-muted">{{ t("Arrastra las tarjetas entre columnas o usa los botones.") }}</p>
 {% endblock %}
 
 {% block acciones %}
@@ -150,9 +150,7 @@
     <div class="kanban-cards" id="cards-{{ col }}">
       {% if not board[col] %}
         <p class="text-muted" style="font-size:var(--text-xs);text-align:center;
-           padding:var(--space-6) 0;">
-          Sin actividades
-        </p>
+           padding:var(--space-6) 0;">{{ t("Sin actividades") }}</p>
       {% endif %}
 
       {% for tarea in board[col] %}
@@ -167,7 +165,7 @@
           <div class="kanban-card-meta">
             {{ tarea.category }} · {{ tarea.due_date }} · {{ tarea.estimated_minutes }} min
             {% if tarea.assigned_by %}
-              <br><span style="color:var(--teal-700);">Asignada</span>
+              <br><span style="color:var(--teal-700);">{{ t("Asignada") }}</span>
             {% endif %}
           </div>
 
@@ -175,9 +173,7 @@
           {% if has_permission('kanban.mover') %}
             <details style="margin-top:var(--space-2);">
               <summary class="btn btn--ghost btn--sm"
-                       style="display:inline-flex;cursor:pointer;font-size:var(--text-xs);">
-                Mover
-              </summary>
+                       style="display:inline-flex;cursor:pointer;font-size:var(--text-xs);">{{ t("Mover") }}</summary>
               <div style="display:flex;flex-wrap:wrap;gap:var(--space-1);margin-top:var(--space-2);">
                 {% for dest in columnas %}
                   {% if dest != col %}

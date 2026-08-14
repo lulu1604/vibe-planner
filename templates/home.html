@@ -4,8 +4,7 @@
 {% block encabezado %}Hola, {{ usuario.full_name or usuario.username }}{% endblock %}
 
 {% block subtitulo %}
-  <p>
-    Entraste como <strong>{{ usuario.username }}</strong> con
+  <p>{{ t("Entraste como") }}<strong>{{ usuario.username }}</strong> con
     {% if roles|length == 1 %}el rol{% else %}los roles{% endif %}
     {% for rol in roles %}{{ rol.name }}{% if not loop.last %} y {% endif %}{% endfor %}.
   </p>
@@ -30,7 +29,7 @@
             <path d="{{ entrada.icono }}"/>
           </svg>
           {% if not entrada.disponible %}
-            <span class="badge badge--inactiva">Proximamente</span>
+            <span class="badge badge--inactiva">{{ t("Proximamente") }}</span>
           {% endif %}
         </div>
 
@@ -40,11 +39,9 @@
         </p>
 
         {% if entrada.disponible %}
-          <a class="btn btn--secondary btn--sm" href="{{ entrada.url }}">Abrir</a>
+          <a class="btn btn--secondary btn--sm" href="{{ entrada.url }}">{{ t("Abrir") }}</a>
         {% else %}
-          <span class="btn btn--secondary btn--sm" aria-disabled="true">
-            Aun no disponible
-          </span>
+          <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ t("Aun no disponible") }}</span>
         {% endif %}
       </div>
     {% endfor %}
@@ -52,8 +49,8 @@
 
   {% if not entradas %}
     <div class="estado-vacio">
-      <h3>Tu cuenta aun no tiene modulos asignados</h3>
-      <p>Pidele a un administrador que revise tus permisos.</p>
+      <h3>{{ t("Tu cuenta aun no tiene modulos asignados") }}</h3>
+      <p>{{ t("Pidele a un administrador que revise tus permisos.") }}</p>
     </div>
   {% endif %}
 

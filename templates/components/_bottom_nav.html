@@ -3,7 +3,7 @@
   Se limita a 5 entradas: mas iconos a 360 px dejan objetivos tactiles por
   debajo de los 44 px y se pulsa el de al lado.
 #}
-<nav class="bottom-nav" aria-label="Menu principal">
+<nav class="bottom-nav" aria-label="{{ t('Menu principal') }}">
   {% for entrada in menu_visible()[:5] %}
     {% if entrada.disponible %}
       <a href="{{ entrada.url }}"
@@ -13,7 +13,7 @@
              stroke-linejoin="round" aria-hidden="true">
           <path d="{{ entrada.icono }}"/>
         </svg>
-        <span>{{ entrada.etiqueta }}</span>
+        <span>{{ t(entrada.etiqueta) }}</span>
       </a>
     {% else %}
       <span aria-disabled="true" style="opacity:.45; display:flex;
@@ -24,7 +24,7 @@
              stroke-linejoin="round" aria-hidden="true">
           <path d="{{ entrada.icono }}"/>
         </svg>
-        <span>{{ entrada.etiqueta }}</span>
+        <span>{{ t(entrada.etiqueta) }}</span>
       </span>
     {% endif %}
   {% endfor %}

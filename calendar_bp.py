@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from flask import (Blueprint, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 
+import i18n
 import config
 import fechas
 import repo_events
@@ -216,14 +217,14 @@ def create_event():
 
         if errores:
             for err in errores:
-                flash(err, "error")
+                flash(i18n.t(err), "error")
             # `form=request.form` conserva lo que la persona ya habia escrito.
             return render_template("calendario/evento_form.html",
                                    allowed_colors=ALLOWED_COLORS, form=request.form)
 
         inicio = datos.pop("inicio")
         repo_events.create(datos, user_id)
-        flash("Evento creado.", "ok")
+        flash(i18n.t("Evento creado."), "ok")
         return redirect(url_for("calendar_bp.month_view",
                                 year=inicio.year, month=inicio.month))
 
@@ -245,7 +246,7 @@ def edit_event(event_id):
 
         if errores:
             for err in errores:
-                flash(err, "error")
+                flash(i18n.t(err), "error")
             # `form` ademas de `event`: sin el, un error borraba de la pantalla
             # todo lo que la persona acababa de teclear y la dejaba mirando los
             # valores viejos, sin entender que se habia perdido.
@@ -254,7 +255,7 @@ def edit_event(event_id):
 
         inicio = datos.pop("inicio")
         repo_events.update_owned(event_id, user_id, datos)
-        flash("Evento actualizado.", "ok")
+        flash(i18n.t("Evento actualizado."), "ok")
         return redirect(url_for("calendar_bp.month_view",
                                 year=inicio.year, month=inicio.month))
 
@@ -274,7 +275,7 @@ def delete_event(event_id):
         abort(404)
 
     repo_events.delete_owned(event_id, user_id)
-    flash("Evento eliminado.", "ok")
+    flash(i18n.t("Evento eliminado."), "ok")
     year, month = _current_local_year_month()
     return redirect(url_for("calendar_bp.month_view", year=year, month=month))
 

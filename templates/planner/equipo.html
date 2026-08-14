@@ -7,7 +7,7 @@
 {% block title %}Equipo · VibePlanner{% endblock %}
 {% block encabezado %}Tareas del equipo{% endblock %}
 {% block subtitulo %}
-  <p class="text-muted">Actividades que asignaste a otros integrantes.</p>
+  <p class="text-muted">{{ t("Actividades que asignaste a otros integrantes.") }}</p>
 {% endblock %}
 
 {% block acciones %}
@@ -20,9 +20,9 @@
 
 {% if not por_persona %}
   <div class="estado-vacio">
-    <h3>Aún no has asignado actividades</h3>
-    <p>Cuando crees una tarea y la asignes a otro usuario, aparecerá aquí agrupada por persona.</p>
-    <a class="btn btn--primary" href="{{ url_for('planner.dia') }}">Ir al planner</a>
+    <h3>{{ t("Aún no has asignado actividades") }}</h3>
+    <p>{{ t("Cuando crees una tarea y la asignes a otro usuario, aparecerá aquí agrupada por persona.") }}</p>
+    <a class="btn btn--primary" href="{{ url_for('planner.dia') }}">{{ t("Ir al planner") }}</a>
   </div>
 {% else %}
   {# Resumen: total de tareas y cuántas están pendientes #}
@@ -39,11 +39,7 @@
 
   <div class="card" style="margin-bottom:var(--space-6);">
     <p class="text-muted">
-      <strong style="color:var(--text-strong);">{{ total_pendientes.n }}</strong>
-      pendientes de
-      <strong style="color:var(--text-strong);">{{ total_asignadas.n }}</strong>
-      tareas asignadas a
-      <strong style="color:var(--text-strong);">{{ por_persona|length }}</strong>
+      <strong style="color:var(--text-strong);">{{ total_pendientes.n }}</strong>{{ t("pendientes de") }}<strong style="color:var(--text-strong);">{{ total_asignadas.n }}</strong>{{ t("tareas asignadas a") }}<strong style="color:var(--text-strong);">{{ por_persona|length }}</strong>
       {% if por_persona|length == 1 %}persona{% else %}personas{% endif %}.
     </p>
   </div>

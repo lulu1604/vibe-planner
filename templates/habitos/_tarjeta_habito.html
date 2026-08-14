@@ -16,9 +16,9 @@
     {# El estado lleva SIEMPRE su texto, no solo el color: en escala de grises
        -- y para quien no distingue rojo y verde -- el color solo no informa. #}
     {% if habito.marcado_hoy %}
-      <span class="badge badge--marcado">Marcado hoy</span>
+      <span class="badge badge--marcado">{{ t("Marcado hoy") }}</span>
     {% else %}
-      <span class="badge badge--sin-marcar">Sin marcar</span>
+      <span class="badge badge--sin-marcar">{{ t("Sin marcar") }}</span>
     {% endif %}
   </div>
 
@@ -26,11 +26,11 @@
     <span class="text-data racha-cifra">{{ habito.racha }}</span>
     {% if habito.racha == 0 %}
       {# "Empieza hoy" invita; "0 días seguidos" solo lamenta. #}
-      <span class="racha-texto">Empieza hoy</span>
+      <span class="racha-texto">{{ t("Empieza hoy") }}</span>
     {% elif habito.racha == 1 %}
-      <span class="racha-texto">día seguido</span>
+      <span class="racha-texto">{{ t("día seguido") }}</span>
     {% else %}
-      <span class="racha-texto">días seguidos</span>
+      <span class="racha-texto">{{ t("días seguidos") }}</span>
     {% endif %}
   </div>
 
@@ -67,10 +67,10 @@
        CORREGIR (guardar otro valor sigue siendo done=1) en vez de que enviar
        el formulario lo desmarque sin querer. Corregir no crea fila (TC-34). #}
     {% if habito.marcado_hoy %}
-      <button class="btn btn--primary" type="submit" name="done" value="1">Guardar</button>
-      <button class="btn btn--ghost" type="submit" name="done" value="0">Desmarcar</button>
+      <button class="btn btn--primary" type="submit" name="done" value="1">{{ t("Guardar") }}</button>
+      <button class="btn btn--ghost" type="submit" name="done" value="0">{{ t("Desmarcar") }}</button>
     {% else %}
-      <button class="btn btn--primary" type="submit" name="done" value="1">Marcar hoy</button>
+      <button class="btn btn--primary" type="submit" name="done" value="1">{{ t("Marcar hoy") }}</button>
     {% endif %}
   </form>
 

@@ -25,6 +25,7 @@ from datetime import datetime
 
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
+import i18n
 import repo_tasks
 import repo_users
 import scoring
@@ -174,7 +175,7 @@ def crear_tarea():
 
     if errores:
         for e in errores:
-            flash(e, "error")
+            flash(i18n.t(e), "error")
         return redirect(url_for("planner.dia"))
 
     # US10: asignacion - solo si tiene el permiso y el campo viene relleno
@@ -187,7 +188,7 @@ def crear_tarea():
             # Antes se descartaba en silencio y el flash decia "Actividad
             # creada.": la tarea aparecia en el planner de quien la escribio y
             # nadie entendia por que no le habia llegado a la otra persona.
-            flash("No puedes asignar actividades a otras personas.", "error")
+            flash(i18n.t("No puedes asignar actividades a otras personas."), "error")
             return redirect(url_for("planner.dia"))
 
         # Que exista Y este activa. Un id inexistente reventaba con un 500 por
@@ -195,7 +196,7 @@ def crear_tarea():
         # negro: a un buzon al que nadie puede entrar.
         destinatario = repo_users.get_by_id(assigned_to)
         if destinatario is None or not destinatario["is_active"]:
-            flash("Esa cuenta no existe o esta desactivada.", "error")
+            flash(i18n.t("Esa cuenta no existe o esta desactivada."), "error")
             return redirect(url_for("planner.dia"))
 
         owner_id = assigned_to
@@ -205,7 +206,7 @@ def crear_tarea():
     if assigned_by:
         flash("Actividad asignada a %s." % destinatario["username"], "ok")
     else:
-        flash("Actividad creada.", "ok")
+        flash(i18n.t("Actividad creada."), "ok")
     return redirect(url_for("planner.dia"))
 
 
@@ -220,11 +221,11 @@ def editar_tarea(task_id):
     datos, errores = _validar_tarea(request.form)
     if errores:
         for e in errores:
-            flash(e, "error")
+            flash(i18n.t(e), "error")
         return redirect(url_for("planner.dia"))
 
     repo_tasks.update_owned(task_id, user_id, datos)
-    flash("Actividad actualizada.", "ok")
+    flash(i18n.t("Actividad actualizada."), "ok")
     return redirect(url_for("planner.dia"))
 
 
@@ -234,7 +235,7 @@ def eliminar_tarea(task_id):
     user_id = security.current_user_id()
     if not repo_tasks.delete_owned(task_id, user_id):
         abort(404)
-    flash("Actividad eliminada.", "ok")
+    flash(i18n.t("Actividad eliminada."), "ok")
     return redirect(url_for("planner.dia"))
 
 

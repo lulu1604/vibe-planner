@@ -11,15 +11,10 @@
     de tablas y a veces datos, y a quien la lee no le sirve de nada.
   #}
   <div class="card">
-    <p style="margin-bottom:var(--space-4);">
-      No fue culpa tuya. El error quedo registrado y tus datos no se han perdido:
-      lo ultimo que guardaste sigue ahi.
-    </p>
+    <p style="margin-bottom:var(--space-4);">{{ t("No fue culpa tuya. El error quedo registrado y tus datos no se han perdido: lo ultimo que guardaste sigue ahi.") }}</p>
     <div class="btn-fila">
-      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
-      <button class="btn btn--secondary" type="button" onclick="history.back()">
-        Volver atras
-      </button>
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">{{ t("Volver al inicio") }}</a>
+      <button class="btn btn--secondary" type="button" onclick="history.back()">{{ t("Volver atras") }}</button>
     </div>
   </div>
 {% endblock %}

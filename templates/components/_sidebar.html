@@ -3,7 +3,7 @@
   El menu muestra TODOS los modulos a los que la cuenta tiene permiso, no un
   buscador donde haya que adivinar: reconocer antes que recordar.
 #}
-<nav class="sidebar" aria-label="Menu principal">
+<nav class="sidebar" aria-label="{{ t('Menu principal') }}">
   <ul class="sidebar-nav">
     {% for entrada in menu_visible() %}
       <li>
@@ -18,20 +18,20 @@
                  stroke-linejoin="round" aria-hidden="true">
               <path d="{{ entrada.icono }}"/>
             </svg>
-            <span class="nav-etiqueta">{{ entrada.etiqueta }}</span>
+            <span class="nav-etiqueta">{{ t(entrada.etiqueta) }}</span>
           </a>
         {% else %}
           {# Modulo aun no construido: se ve para que se sepa que viene, pero
              no se puede pulsar y se dice por que. Un enlace que no lleva a
              ningun sitio es peor que un enlace apagado. #}
           <span class="sidebar-enlace" aria-disabled="true"
-                title="Proximamente: este modulo aun se esta construyendo">
+                title="{{ t('Proximamente: este modulo aun se esta construyendo') }}">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                  stroke-linejoin="round" aria-hidden="true">
               <path d="{{ entrada.icono }}"/>
             </svg>
-            <span class="nav-etiqueta">{{ entrada.etiqueta }}</span>
+            <span class="nav-etiqueta">{{ t(entrada.etiqueta) }}</span>
           </span>
         {% endif %}
       </li>

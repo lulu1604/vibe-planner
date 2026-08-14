@@ -15,9 +15,7 @@
      secundarias, y desactivar es destructiva. Si hubiera tres botones
      igual de llamativos, no habria ninguno. #}
   {% if has_permission('usuario.crear') %}
-    <button class="btn btn--primary" type="button" data-abre-modal="modal-nueva-cuenta">
-      Nueva cuenta
-    </button>
+    <button class="btn btn--primary" type="button" data-abre-modal="modal-nueva-cuenta">{{ t("Nueva cuenta") }}</button>
   {% endif %}
 {% endblock %}
 
@@ -33,15 +31,15 @@
      ------------------------------------------------------------------ #}
   <form class="barra-filtros" method="get" action="{{ url_for('admin.usuarios') }}">
     <div class="field">
-      <label class="field-etiqueta" for="campo-q">Buscar cuenta</label>
+      <label class="field-etiqueta" for="campo-q">{{ t("Buscar cuenta") }}</label>
       <input class="field-control" id="campo-q" name="q" type="search"
              value="{{ busqueda or '' }}" maxlength="60"
              placeholder="usuario, nombre o correo"
              autocomplete="off">
     </div>
-    <button class="btn btn--secondary" type="submit">Buscar</button>
+    <button class="btn btn--secondary" type="submit">{{ t("Buscar") }}</button>
     {% if busqueda %}
-      <a class="btn btn--ghost" href="{{ url_for('admin.usuarios') }}">Quitar filtro</a>
+      <a class="btn btn--ghost" href="{{ url_for('admin.usuarios') }}">{{ t("Quitar filtro") }}</a>
     {% endif %}
   </form>
 
@@ -51,17 +49,15 @@
   {% if usuarios %}
     <div class="tabla-envoltura">
       <table class="tabla">
-        <caption class="solo-lectores">
-          Cuentas del sistema con sus roles, su estado y las acciones disponibles
-        </caption>
+        <caption class="solo-lectores">{{ t("Cuentas del sistema con sus roles, su estado y las acciones disponibles") }}</caption>
         <thead>
           <tr>
-            <th scope="col">Usuario</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Correo</th>
-            <th scope="col">Roles</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Acciones</th>
+            <th scope="col">{{ t("Usuario") }}</th>
+            <th scope="col">{{ t("Nombre") }}</th>
+            <th scope="col">{{ t("Correo") }}</th>
+            <th scope="col">{{ t("Roles") }}</th>
+            <th scope="col">{{ t("Estado") }}</th>
+            <th scope="col">{{ t("Acciones") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -95,9 +91,9 @@
                    escala de grises tiene que seguir distinguiendose: azul y
                    rosa se confunden para quien tiene daltonismo rojo-verde. #}
                 {% if u.is_active %}
-                  <span class="badge badge--activa">Activa</span>
+                  <span class="badge badge--activa">{{ t("Activa") }}</span>
                 {% else %}
-                  <span class="badge badge--inactiva">Desactivada</span>
+                  <span class="badge badge--inactiva">{{ t("Desactivada") }}</span>
                 {% endif %}
               </td>
 
@@ -107,8 +103,7 @@
                    DOM y siete casillas compartiendo el mismo id. Todo eso vive
                    ahora en la pantalla de la cuenta. #}
                 <a class="btn btn--secondary btn--sm"
-                   href="{{ url_for('admin.usuario_detalle', user_id=u.id) }}">
-                  Gestionar<span class="solo-lectores"> la cuenta de {{ u.username }}</span>
+                   href="{{ url_for('admin.usuario_detalle', user_id=u.id) }}">{{ t("Gestionar") }}<span class="solo-lectores"> la cuenta de {{ u.username }}</span>
                 </a>
               </td>
 
@@ -125,16 +120,12 @@
       <nav class="paginacion" aria-label="Paginas de resultados">
         {% if pagina > 1 %}
           <a class="btn btn--secondary btn--sm"
-             href="{{ url_for('admin.usuarios', page=pagina-1, q=busqueda or none) }}">
-            Anterior
-          </a>
+             href="{{ url_for('admin.usuarios', page=pagina-1, q=busqueda or none) }}">{{ t("Anterior") }}</a>
         {% endif %}
         <span>Pagina {{ pagina }} de {{ total_paginas }}</span>
         {% if pagina < total_paginas %}
           <a class="btn btn--secondary btn--sm"
-             href="{{ url_for('admin.usuarios', page=pagina+1, q=busqueda or none) }}">
-            Siguiente
-          </a>
+             href="{{ url_for('admin.usuarios', page=pagina+1, q=busqueda or none) }}">{{ t("Siguiente") }}</a>
         {% endif %}
       </nav>
     {% endif %}
@@ -146,12 +137,12 @@
        -------------------------------------------------------------- #}
     <div class="estado-vacio">
       {% if busqueda %}
-        <h3>Sin resultados</h3>
+        <h3>{{ t("Sin resultados") }}</h3>
         <p>No encontramos cuentas que coincidan con «{{ busqueda }}».</p>
-        <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">Quitar filtro</a>
+        <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">{{ t("Quitar filtro") }}</a>
       {% else %}
-        <h3>Aun no hay mas cuentas que la tuya</h3>
-        <p>Crea la primera con el boton «Nueva cuenta» de arriba.</p>
+        <h3>{{ t("Aun no hay mas cuentas que la tuya") }}</h3>
+        <p>{{ t("Crea la primera con el boton «Nueva cuenta» de arriba.") }}</p>
       {% endif %}
     </div>
   {% endif %}

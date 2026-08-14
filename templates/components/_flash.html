@@ -16,7 +16,7 @@
         {# Las categorias que usa el proyecto son 'ok', 'error' e 'info'.
            Cualquier otra cae en 'info' en vez de quedarse sin estilo. #}
         <div class="alert alert--{{ categoria if categoria in ('ok', 'error', 'info') else 'info' }}">
-          <span>{{ mensaje }}</span>
+          <span>{{ t(mensaje) }}</span>
         </div>
       {% endfor %}
     </div>

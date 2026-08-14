@@ -11,11 +11,9 @@
     Para quien pregunta, lo que no es suyo simplemente no existe.
   #}
   <div class="card">
-    <p style="margin-bottom:var(--space-4);">
-      Puede que el enlace este mal escrito, o que eso que buscas ya no exista.
-    </p>
+    <p style="margin-bottom:var(--space-4);">{{ t("Puede que el enlace este mal escrito, o que eso que buscas ya no exista.") }}</p>
     <div class="btn-fila">
-      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">{{ t("Volver al inicio") }}</a>
     </div>
   </div>
 {% endblock %}

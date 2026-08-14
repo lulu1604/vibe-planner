@@ -12,20 +12,20 @@
 {% block title %}Hábitos — VibePlanner{% endblock %}
 {% block encabezado %}Mis hábitos{% endblock %}
 {% block subtitulo %}
-  <p class="text-muted">Tus rachas de sueño, ejercicio y alimentación.</p>
+  <p class="text-muted">{{ t("Tus rachas de sueño, ejercicio y alimentación.") }}</p>
 {% endblock %}
 
 {% block acciones %}
-  <a class="btn btn--primary" href="#nuevo-habito">Nuevo hábito</a>
+  <a class="btn btn--primary" href="#nuevo-habito">{{ t("Nuevo hábito") }}</a>
 {% endblock %}
 
 {% block content %}
 
   {% if total_habitos == 0 %}
     <div class="estado-vacio">
-      <h3>Aún no sigues ningún hábito</h3>
-      <p>Empieza por uno: dormir, ejercicio o alimentación.</p>
-      <a class="btn btn--secondary" href="#nuevo-habito">Crear el primero</a>
+      <h3>{{ t("Aún no sigues ningún hábito") }}</h3>
+      <p>{{ t("Empieza por uno: dormir, ejercicio o alimentación.") }}</p>
+      <a class="btn btn--secondary" href="#nuevo-habito">{{ t("Crear el primero") }}</a>
     </div>
   {% else %}
     {% for grupo in grupos %}
@@ -44,7 +44,7 @@
      que se puede hacer en esa pantalla, y esconderlo tras un clic sobra. #}
   <details class="card nuevo-habito" id="nuevo-habito"
            {% if total_habitos == 0 %}open{% endif %}>
-    <summary class="card-titulo">Nuevo hábito</summary>
+    <summary class="card-titulo">{{ t("Nuevo hábito") }}</summary>
 
     <form method="post" action="{{ url_for('habitos.crear') }}" class="pila-4">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -55,7 +55,7 @@
                 "ayuda": "Por ejemplo: Dormir 8 horas"}) }}
 
       <div class="field">
-        <label class="field-etiqueta" for="campo-habit_type">Tipo</label>
+        <label class="field-etiqueta" for="campo-habit_type">{{ t("Tipo") }}</label>
         {# Lista cerrada: el tipo no se escribe a mano, se elige. Es la misma
            lista que valida el CHECK de la base y repo_habits.create(). #}
         <select class="field-control" id="campo-habit_type" name="habit_type">
@@ -66,18 +66,16 @@
       </div>
 
       <div class="field">
-        <label class="field-etiqueta" for="campo-target_value">Meta diaria</label>
+        <label class="field-etiqueta" for="campo-target_value">{{ t("Meta diaria") }}</label>
         <input class="field-control" id="campo-target_value" name="target_value"
                type="number" inputmode="decimal" min="0.1" max="1000" step="any"
                value="1" required
                aria-describedby="campo-target_value-ayuda">
-        <span class="field-ayuda" id="campo-target_value-ayuda">
-          Cuánto cuenta como cumplido. Por ejemplo: 8.
-        </span>
+        <span class="field-ayuda" id="campo-target_value-ayuda">{{ t("Cuánto cuenta como cumplido. Por ejemplo: 8.") }}</span>
       </div>
 
       <div class="field">
-        <label class="field-etiqueta" for="campo-unit">Unidad</label>
+        <label class="field-etiqueta" for="campo-unit">{{ t("Unidad") }}</label>
         <select class="field-control" id="campo-unit" name="unit">
           {% for unidad in unidades %}
             <option value="{{ unidad }}">{{ unidad }}</option>
@@ -86,7 +84,7 @@
       </div>
 
       <div class="btn-fila">
-        <button class="btn btn--primary" type="submit">Crear hábito</button>
+        <button class="btn btn--primary" type="submit">{{ t("Crear hábito") }}</button>
       </div>
     </form>
   </details>

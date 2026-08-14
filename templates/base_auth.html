@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ idioma_actual() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,7 @@
 
       <div class="auth-marca">
         <span class="nombre">VibePlanner</span>
-        <span class="lema">Tu plan del dia, ordenado y explicado.</span>
+        <span class="lema">{{ t("Tu plan del dia, ordenado y explicado.") }}</span>
       </div>
 
       {% include "components/_flash.html" %}

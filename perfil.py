@@ -21,6 +21,7 @@ desde admin.py, con el permiso `rol.asignar`.
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+import i18n
 import repo_users
 import security
 import validators
@@ -83,7 +84,7 @@ def guardar():
         return _pintar(datos=datos, errores=errores, codigo=400)
 
     repo_users.update_profile(user_id, datos["full_name"], datos["email"])
-    flash("Tus datos quedaron actualizados.", "ok")
+    flash(i18n.t("Tus datos quedaron actualizados."), "ok")
     return redirect(url_for("perfil.ver"))
 
 
@@ -110,5 +111,5 @@ def cambiar_password():
                        codigo=400)
 
     repo_users.set_password(usuario["id"], nueva)
-    flash("Tu contrasena quedo actualizada.", "ok")
+    flash(i18n.t("Tu contrasena quedo actualizada."), "ok")
     return redirect(url_for("perfil.ver"))

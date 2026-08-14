@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ idioma_actual() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -46,7 +46,7 @@
   </script>
 </head>
 <body>
-  <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+  <a class="skip-link" href="#contenido-principal">{{ t("Saltar al contenido") }}</a>
 
   {% set usuario_actual = current_user() %}
 
@@ -61,7 +61,7 @@
     <header class="topbar">
       <span class="topbar-marca">VibePlanner</span>
       <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.login') }}"
-         style="color: var(--text-on-dark);">Entrar</a>
+         style="color: var(--text-on-dark);">{{ t("Entrar") }}</a>
     </header>
     <div>
   {% endif %}

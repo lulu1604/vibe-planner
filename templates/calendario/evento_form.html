@@ -28,7 +28,7 @@
 {% block encabezado %}{{ 'Editar evento' if event else 'Nuevo evento' }}{% endblock %}
 
 {% block acciones %}
-  <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">Volver al calendario</a>
+  <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">{{ t("Volver al calendario") }}</a>
 {% endblock %}
 
 {% block content %}
@@ -40,15 +40,14 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <div class="field">
-      <label class="field-etiqueta" for="campo-titulo">Titulo del evento</label>
+      <label class="field-etiqueta" for="campo-titulo">{{ t("Titulo del evento") }}</label>
       <input class="field-control" id="campo-titulo" name="title" type="text"
              value="{{ event.title if event else (form.title if form else '') }}"
              required maxlength="120" autofocus>
     </div>
 
     <div class="field">
-      <label class="field-etiqueta" for="campo-desc">
-        Descripcion <span class="opcional">(opcional)</span>
+      <label class="field-etiqueta" for="campo-desc">{{ t("Descripcion") }}<span class="opcional">(opcional)</span>
       </label>
       <textarea class="field-control" id="campo-desc" name="description" rows="3"
                 maxlength="500">{{ event.description if event else (form.description if form else '') }}</textarea>
@@ -57,37 +56,33 @@
     <div style="display:grid; gap:var(--space-4);
                 grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));">
       <div class="field">
-        <label class="field-etiqueta" for="campo-fecha-inicio">Fecha de inicio</label>
+        <label class="field-etiqueta" for="campo-fecha-inicio">{{ t("Fecha de inicio") }}</label>
         <input class="field-control" id="campo-fecha-inicio" name="start_date" type="date"
                value="{{ event.start_at.split(' ')[0] if event else (default_date or '') }}"
                required>
       </div>
       <div class="field">
-        <label class="field-etiqueta" for="campo-hora-inicio">Hora de inicio</label>
+        <label class="field-etiqueta" for="campo-hora-inicio">{{ t("Hora de inicio") }}</label>
         <input class="field-control" id="campo-hora-inicio" name="start_time" type="time"
                value="{{ event.start_at.split(' ')[1] if event else '09:00' }}" required>
       </div>
       <div class="field">
-        <label class="field-etiqueta" for="campo-fecha-fin">Fecha de fin</label>
+        <label class="field-etiqueta" for="campo-fecha-fin">{{ t("Fecha de fin") }}</label>
         <input class="field-control" id="campo-fecha-fin" name="end_date" type="date"
                value="{{ event.end_at.split(' ')[0] if event else (default_date or '') }}"
                required>
       </div>
       <div class="field">
-        <label class="field-etiqueta" for="campo-hora-fin">Hora de fin</label>
+        <label class="field-etiqueta" for="campo-hora-fin">{{ t("Hora de fin") }}</label>
         <input class="field-control" id="campo-hora-fin" name="end_time" type="time"
                value="{{ event.end_at.split(' ')[1] if event else '10:00' }}"
                required aria-describedby="ayuda-fin">
-        <span class="field-ayuda" id="ayuda-fin">
-          Tiene que ser posterior a la hora de inicio.
-        </span>
+        <span class="field-ayuda" id="ayuda-fin">{{ t("Tiene que ser posterior a la hora de inicio.") }}</span>
       </div>
     </div>
 
     <fieldset style="border:0; padding:0; margin:0 0 var(--space-4);">
-      <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-2);">
-        Color del evento
-      </legend>
+      <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-2);">{{ t("Color del evento") }}</legend>
       <div class="field-casillas" style="flex-direction:row; flex-wrap:wrap;">
         {% for color in allowed_colors %}
           <label class="casilla" style="grid-template-columns:auto auto; align-items:center;"
@@ -112,7 +107,7 @@
         {{ 'Guardar cambios' if event else 'Crear evento' }}
       </button>
       {# H3: cancelar siempre visible, al lado de guardar. #}
-      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">Cancelar</a>
+      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.index') }}">{{ t("Cancelar") }}</a>
     </div>
   </form>
 </div>
@@ -122,7 +117,7 @@
      Invitaciones (US12)
      ------------------------------------------------------------------ #}
   <div class="card" style="max-width:42rem; margin-top:var(--space-6);">
-    <h2 class="card-titulo">Invitar a este evento</h2>
+    <h2 class="card-titulo">{{ t("Invitar a este evento") }}</h2>
     <p class="text-muted" style="margin-bottom:var(--space-4);">
       Genera un link y compartelo por donde quieras. No se envia ningun correo:
       quien lo abra tendra que iniciar sesion para aceptar.
@@ -131,9 +126,7 @@
     <form method="post" id="invite-form"
           action="{{ url_for('calendar_bp.generate_invite_link', event_id=event.id) }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <button class="btn btn--secondary" type="button" id="btn-invite">
-        Generar link de invitacion
-      </button>
+      <button class="btn btn--secondary" type="button" id="btn-invite">{{ t("Generar link de invitacion") }}</button>
     </form>
 
     {# Lo rellena calendario.js. `aria-live` hace que el lector de pantalla
@@ -147,14 +140,9 @@
      ------------------------------------------------------------------ #}
   {% if has_permission('evento.eliminar') %}
     <div class="card" style="max-width:42rem; margin-top:var(--space-6);">
-      <h2 class="card-titulo">Eliminar evento</h2>
-      <p class="text-muted" style="margin-bottom:var(--space-4);">
-        Se borra para ti y para quienes aceptaron la invitacion. No se puede
-        deshacer.
-      </p>
-      <button class="btn btn--danger" type="button" data-abre-modal="modal-borrar-evento">
-        Eliminar evento
-      </button>
+      <h2 class="card-titulo">{{ t("Eliminar evento") }}</h2>
+      <p class="text-muted" style="margin-bottom:var(--space-4);">{{ t("Se borra para ti y para quienes aceptaron la invitacion. No se puede deshacer.") }}</p>
+      <button class="btn btn--danger" type="button" data-abre-modal="modal-borrar-evento">{{ t("Eliminar evento") }}</button>
     </div>
 
     <dialog class="modal" id="modal-borrar-evento" aria-labelledby="titulo-borrar">
@@ -170,16 +158,13 @@
         </div>
 
         <div class="modal-cuerpo">
-          <p>Desaparecera de tu calendario y del de quienes aceptaron la
-             invitacion.</p>
-          <p><strong>Esta accion no se puede deshacer.</strong></p>
+          <p>{{ t("Desaparecera de tu calendario y del de quienes aceptaron la invitacion.") }}</p>
+          <p><strong>{{ t("Esta accion no se puede deshacer.") }}</strong></p>
         </div>
 
         <div class="modal-pie">
-          <button class="btn btn--secondary" type="button" data-cierra-modal>Cancelar</button>
-          <button class="btn btn--danger" type="submit" data-enviando="Eliminando...">
-            Eliminar evento
-          </button>
+          <button class="btn btn--secondary" type="button" data-cierra-modal>{{ t("Cancelar") }}</button>
+          <button class="btn btn--danger" type="submit" data-enviando="Eliminando...">{{ t("Eliminar evento") }}</button>
         </div>
       </form>
     </dialog>

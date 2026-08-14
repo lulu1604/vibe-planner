@@ -649,6 +649,62 @@ def main():
     comprobar("        toda URL escrita en kanban.js existe en el servidor",
               not rotas, rotas)
 
+    print("\n--- Idiomas (ES / EN) ---")
+
+    # Una traduccion rota no da error: da una pantalla a medias, o un 500 en
+    # una sola de las dos lenguas. Por eso se recorren TODAS las pantallas en
+    # los dos idiomas, no solo una de muestra.
+    import fechas as _fechas
+    _post(jose_cli, "/eventos/nuevo", title="Evento ES-EN", start_date=_fechas.hoy_iso(),
+          start_time="09:00", end_date=_fechas.hoy_iso(), end_time="10:00", color="#567C8D")
+    _post(jose_cli, "/habitos", name="Dormir", habit_type="sueno",
+          target_value="8", unit="horas")
+
+    PANTALLAS = ["/inicio", "/planner", "/kanban", "/calendario/2026/8", "/eventos/nuevo",
+                 "/habitos", "/metricas", "/perfil", "/no-existe"]
+
+    for idioma in ("es", "en"):
+        _post(jose_cli, "/idioma", idioma=idioma, volver="/inicio")
+        rotas = [p for p in PANTALLAS
+                 if jose_cli.get(p, follow_redirects=True).status_code >= 500]
+        comprobar(f"        las {len(PANTALLAS)} pantallas responden en '{idioma}'",
+                  not rotas, rotas)
+
+    # El idioma tiene que CAMBIAR de verdad, no solo no reventar.
+    _post(jose_cli, "/idioma", idioma="en", volver="/inicio")
+    html_en = jose_cli.get("/inicio").get_data(as_text=True)
+    comprobar("        en ingles el menu esta en ingles",
+              "Sign out" in html_en and "Cerrar sesion" not in html_en)
+    comprobar("        ...y <html lang> lo declara", 'lang="en"' in html_en)
+
+    _post(jose_cli, "/idioma", idioma="es", volver="/inicio")
+    html_es = jose_cli.get("/inicio").get_data(as_text=True)
+    comprobar("        y en castellano vuelve al castellano",
+              "Cerrar sesion" in html_es and 'lang="es"' in html_es)
+
+    # Los mensajes del SERVIDOR tambien: si solo se tradujeran las plantillas,
+    # los flash y los errores de validacion saldrian siempre en castellano y
+    # quedaria media pantalla en cada lengua.
+    _post(jose_cli, "/idioma", idioma="en", volver="/inicio")
+    r = _post(admin_cli, "/idioma", idioma="en", volver="/inicio")
+    html = _post(admin_cli, "/admin/usuarios", username="a", email="x",
+                 password="1").get_data(as_text=True)
+    comprobar("        los errores de validacion tambien se traducen",
+              "at least 8 characters" in html, "salieron en castellano")
+    _post(admin_cli, "/idioma", idioma="es", volver="/inicio")
+
+    # Un idioma inventado NO puede acabar en el atributo lang del <html>.
+    _post(jose_cli, "/idioma", idioma='"><script>alert(1)</script>', volver="/inicio")
+    html = jose_cli.get("/inicio").get_data(as_text=True)
+    comprobar("        un idioma inventado cae al castellano",
+              'lang="es"' in html and "<script>alert(1)" not in html)
+
+    # El destino del formulario no puede sacarte del sitio.
+    r = _post(jose_cli, "/idioma", idioma="es", volver="https://otro-sitio.com/x")
+    comprobar("        el campo `volver` no permite un redirector abierto",
+              "otro-sitio" not in (r.headers.get("Location") or ""),
+              r.headers.get("Location"))
+
     print("\n--- Transversales ---")
 
     # --- CSRF -------------------------------------------------------------

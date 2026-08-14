@@ -16,19 +16,17 @@
 {# Cuadricula, no texto: usa el ancho completo. #}
 {% block ancho %}contenido--ancho{% endblock %}
 
-{% block title %}Calendario · {{ month_name }} {{ year }}{% endblock %}
-{% block encabezado %}{{ month_name }} {{ year }}{% endblock %}
+{% block title %}{{ t("Calendario") }} · {{ t(month_name) }} {{ year }}{% endblock %}
+{% block encabezado %}{{ t(month_name) }} {{ year }}{% endblock %}
 
 {% block subtitulo %}
-  <p>Tus eventos y aquellos a los que aceptaste una invitacion.</p>
+  <p>{{ t("Tus eventos y aquellos a los que aceptaste una invitacion.") }}</p>
 {% endblock %}
 
 {% block acciones %}
   {# Una sola accion primaria por pantalla; la navegacion es secundaria. #}
   {% if has_permission('evento.crear') %}
-    <a class="btn btn--primary" href="{{ url_for('calendar_bp.create_event') }}">
-      Nuevo evento
-    </a>
+    <a class="btn btn--primary" href="{{ url_for('calendar_bp.create_event') }}">{{ t("Nuevo evento") }}</a>
   {% endif %}
 {% endblock %}
 
@@ -46,20 +44,20 @@
     <a class="btn btn--secondary btn--sm"
        href="{{ url_for('calendar_bp.month_view', year=prev_year, month=prev_month) }}"
        rel="prev">
-      &larr; <span class="solo-lectores">Mes anterior: </span>{{ prev_month }}/{{ prev_year }}
+      &larr; <span class="solo-lectores">{{ t("Mes anterior:") }}</span>{{ prev_month }}/{{ prev_year }}
     </a>
 
-    <a class="btn btn--ghost btn--sm" href="{{ url_for('calendar_bp.index') }}">Hoy</a>
+    <a class="btn btn--ghost btn--sm" href="{{ url_for('calendar_bp.index') }}">{{ t("Hoy") }}</a>
 
     <a class="btn btn--secondary btn--sm"
        href="{{ url_for('calendar_bp.month_view', year=next_year, month=next_month) }}"
        rel="next">
-      <span class="solo-lectores">Mes siguiente: </span>{{ next_month }}/{{ next_year }} &rarr;
+      <span class="solo-lectores">{{ t("Mes siguiente:") }}</span>{{ next_month }}/{{ next_year }} &rarr;
     </a>
   </nav>
 
   <div class="calendar-grid" role="grid"
-       aria-label="Dias de {{ month_name }} de {{ year }}">
+       aria-label="{{ t(month_name) }} {{ year }}">
 
     {# Dos formas del mismo dia: la abreviatura para pantallas normales y la
        inicial para movil, donde la columna mide 44 px y "Lun" no cabe. El CSS
@@ -70,8 +68,8 @@
         ("X", "Mie", "Miercoles"), ("J", "Jue", "Jueves"),
         ("V", "Vie", "Viernes"),   ("S", "Sab", "Sabado"),
         ("D", "Dom", "Domingo")] %}
-      <div class="calendar-day-header" role="columnheader" title="{{ completo }}">
-        <span class="dia-largo">{{ largo }}</span><span class="dia-corto">{{ corto }}</span>
+      <div class="calendar-day-header" role="columnheader" title="{{ t(completo) }}">
+        <span class="dia-largo">{{ t(largo) }}</span><span class="dia-corto">{{ t(largo)[0] }}</span>
       </div>
     {% endfor %}
 
@@ -93,7 +91,7 @@
               {% if has_permission('evento.crear') %}
                 <a class="add-event-btn"
                    href="{{ url_for('calendar_bp.create_event', date=date_str) }}">
-                  +<span class="solo-lectores"> Agregar evento el {{ day }} de {{ month_name }}</span>
+                  +<span class="solo-lectores"> Agregar evento {{ day }} {{ t(month_name) }}</span>
                 </a>
               {% endif %}
             </div>
@@ -133,12 +131,10 @@
 
 {% if not events_by_date %}
   <div class="estado-vacio" style="margin-top: var(--space-6);">
-    <h3>Sin eventos este mes</h3>
-    <p>Crea el primero y aparecera en su dia.</p>
+    <h3>{{ t("Sin eventos este mes") }}</h3>
+    <p>{{ t("Crea el primero y aparecera en su dia.") }}</p>
     {% if has_permission('evento.crear') %}
-      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.create_event') }}">
-        Nuevo evento
-      </a>
+      <a class="btn btn--secondary" href="{{ url_for('calendar_bp.create_event') }}">{{ t("Nuevo evento") }}</a>
     {% endif %}
   </div>
 {% endif %}

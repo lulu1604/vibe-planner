@@ -24,6 +24,7 @@ from flask import Flask, flash, get_flashed_messages, jsonify, redirect, render_
 
 import config
 import database
+import i18n
 import scoring
 import security
 from admin import admin as admin_bp
@@ -48,6 +49,7 @@ database.init_db()
 # v2 - NÚCLEO Y MÓDULOS
 # --------------------------------------------------------------------------
 security.init_app(app)      # CSRF global + helpers de plantilla
+i18n.init_app(app)          # expone t() e IDIOMAS a TODAS las plantillas
 register_menu(app)          # menú filtrado por permisos
 
 app.register_blueprint(auth_bp)        # /register /login /logout

@@ -13,9 +13,10 @@ protegida por @requires en el servidor y responde 403 aunque se escriba la URL
 a mano (TC-07).
 """
 
-from flask import Blueprint, render_template, url_for
+from flask import Blueprint, redirect, render_template, request, url_for
 from werkzeug.routing import BuildError
 
+import i18n
 import repo_users
 import security
 
@@ -172,3 +173,25 @@ def index():
         entradas=[e for e in entradas if e["clave"] != "perfil"],
         roles=repo_users.get_roles(usuario["id"]),
     )
+
+
+@home.route("/idioma", methods=["POST"])
+@security.login_required
+def cambiar_idioma():
+    """
+    Cambia el idioma de la interfaz y vuelve a donde estabas.
+
+    Va en la SESION y no en el navegador porque los mensajes de flash() los
+    genera el servidor: con el idioma solo en localStorage saldrian siempre en
+    castellano y quedaria media pantalla en cada lengua.
+
+    El destino se compara contra las rutas propias en vez de seguir el
+    Referer a ciegas: un `next` libre convierte cualquier formulario en un
+    redirector abierto hacia fuera del sitio.
+    """
+    i18n.fijar_idioma(request.form.get("idioma"))
+
+    volver = request.form.get("volver") or ""
+    if not volver.startswith("/") or volver.startswith("//"):
+        volver = url_for("home.index")
+    return redirect(volver)

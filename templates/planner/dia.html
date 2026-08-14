@@ -27,7 +27,7 @@
 {# ── Barra de progreso diario ──────────────────────────────────────── #}
 <div class="card" style="margin-bottom:var(--space-6);">
   <div class="fila-entre" style="margin-bottom:var(--space-3);">
-    <h2 class="sin-margen">Avance de hoy</h2>
+    <h2 class="sin-margen">{{ t("Avance de hoy") }}</h2>
     <span class="text-data" style="font-size:var(--text-lg);font-weight:700;color:var(--text-strong);">
       {{ progreso.completed }} de {{ progreso.total }} · {{ progreso.percent }}%
     </span>
@@ -39,31 +39,27 @@
        aria-label="Actividades completadas hoy">
     <div class="barra-progreso-relleno" style="width:{{ progreso.percent }}%;"></div>
   </div>
-  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-2);">
-    El backlog no cuenta: solo las tareas comprometidas para hoy.
-  </p>
+  <p class="text-muted" style="font-size:var(--text-xs);margin-top:var(--space-2);">{{ t("El backlog no cuenta: solo las tareas comprometidas para hoy.") }}</p>
 </div>
 
 {# ── Tiempo disponible ──────────────────────────────────────────────── #}
 <form class="barra-filtros" method="get" action="{{ url_for('planner.dia') }}"
       style="margin-bottom:var(--space-6);">
   <div class="field" style="max-width:16rem;">
-    <label class="field-etiqueta" for="campo-available">Tiempo disponible hoy</label>
+    <label class="field-etiqueta" for="campo-available">{{ t("Tiempo disponible hoy") }}</label>
     <input class="field-control" id="campo-available" name="available"
            type="number" min="1" max="480" value="{{ available_minutes }}"
            aria-describedby="ayuda-available">
-    <span class="field-ayuda" id="ayuda-available">
-      Minutos. Las actividades que entren en ese hueco suman +15 pts.
-    </span>
+    <span class="field-ayuda" id="ayuda-available">{{ t("Minutos. Las actividades que entren en ese hueco suman +15 pts.") }}</span>
   </div>
-  <button class="btn btn--secondary" type="submit">Actualizar</button>
+  <button class="btn btn--secondary" type="submit">{{ t("Actualizar") }}</button>
 </form>
 
 {# ── Lista de actividades del día ──────────────────────────────────── #}
 {% if not tareas %}
   <div class="estado-vacio">
-    <h3>Hoy no tienes nada planeado</h3>
-    <p>Agrega tu primera actividad y verás tu día ordenado por importancia.</p>
+    <h3>{{ t("Hoy no tienes nada planeado") }}</h3>
+    <p>{{ t("Agrega tu primera actividad y verás tu día ordenado por importancia.") }}</p>
     {% if has_permission('planner.crear') %}
       <button class="btn btn--primary"
               onclick="document.getElementById('modal-nueva-tarea').showModal()">
@@ -97,19 +93,13 @@
             {# Insignia de prioridad #}
             {% if tarea.priority_level == 1 %}
               <span style="background:var(--blush);color:var(--rose-700);border:1px solid var(--rose);
-                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">
-                Alta
-              </span>
+                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">{{ t("Alta") }}</span>
             {% elif tarea.priority_level == 2 %}
               <span style="background:var(--slate);color:var(--taupe);
-                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">
-                Media
-              </span>
+                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">{{ t("Media") }}</span>
             {% else %}
               <span style="border:1px solid var(--steel);color:var(--taupe);
-                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">
-                Baja
-              </span>
+                           padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:600;">{{ t("Baja") }}</span>
             {% endif %}
             {# Columna actual #}
             <span style="background:var(--bg-subtle);color:var(--text-muted);
@@ -118,9 +108,7 @@
             </span>
             {# Asignada por #}
             {% if tarea.assigned_by %}
-              <span style="color:var(--teal-700);font-size:var(--text-xs);">
-                Asignada por otro usuario
-              </span>
+              <span style="color:var(--teal-700);font-size:var(--text-xs);">{{ t("Asignada por otro usuario") }}</span>
             {% endif %}
           </div>
 
@@ -128,9 +116,7 @@
           {% if has_permission('planner.ver') %}
             <button class="btn btn--ghost btn--sm why-btn"
                     data-task-id="{{ tarea.id }}"
-                    aria-label="Ver por qué esta tarea tiene {{ tarea.score }} puntos">
-              ¿Por qué?
-            </button>
+                    aria-label="Ver por qué esta tarea tiene {{ tarea.score }} puntos">{{ t("¿Por qué?") }}</button>
           {% endif %}
         </div>
 
@@ -169,7 +155,7 @@
                   </option>
                 {% endfor %}
               </select>
-              <button class="btn btn--secondary btn--sm" type="submit">Mover</button>
+              <button class="btn btn--secondary btn--sm" type="submit">{{ t("Mover") }}</button>
             </form>
           {% endif %}
 
@@ -178,9 +164,7 @@
                   action="{{ url_for('planner.eliminar_tarea', task_id=tarea.id) }}">
               <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
               <button class="btn btn--danger btn--sm" type="submit"
-                      onclick="return confirm('¿Eliminar esta actividad?')">
-                Eliminar
-              </button>
+                      onclick="return confirm('¿Eliminar esta actividad?')">{{ t("Eliminar") }}</button>
             </form>
           {% endif %}
         </div>
@@ -194,7 +178,7 @@
 {% if has_permission('planner.crear') %}
 <dialog id="modal-nueva-tarea" class="modal">
   <div class="modal-cabecera">
-    <h2>Nueva actividad</h2>
+    <h2>{{ t("Nueva actividad") }}</h2>
     <button class="modal-cerrar" onclick="this.closest('dialog').close()"
             aria-label="Cerrar">✕</button>
   </div>
@@ -203,14 +187,14 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
       <div class="field">
-        <label class="field-etiqueta" for="nt-title">Título</label>
+        <label class="field-etiqueta" for="nt-title">{{ t("Título") }}</label>
         <input class="field-control" id="nt-title" name="title"
                type="text" required maxlength="120"
                placeholder="Qué vas a hacer">
       </div>
 
       <div class="field">
-        <label class="field-etiqueta" for="nt-desc">Descripción (opcional)</label>
+        <label class="field-etiqueta" for="nt-desc">{{ t("Descripción (opcional)") }}</label>
         <textarea class="field-control" id="nt-desc" name="description"
                   rows="2" maxlength="500"
                   placeholder="Detalles adicionales..."></textarea>
@@ -219,51 +203,51 @@
       <div style="display:grid;gap:var(--space-4);
                   grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));">
         <div class="field">
-          <label class="field-etiqueta" for="nt-category">Categoría</label>
+          <label class="field-etiqueta" for="nt-category">{{ t("Categoría") }}</label>
           <input class="field-control" id="nt-category" name="category"
                  type="text" value="General" maxlength="40">
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-priority">Prioridad</label>
+          <label class="field-etiqueta" for="nt-priority">{{ t("Prioridad") }}</label>
           <select class="field-control" id="nt-priority" name="priority_level">
-            <option value="1">Alta</option>
-            <option value="2" selected>Media</option>
-            <option value="3">Baja</option>
+            <option value="1">{{ t("Alta") }}</option>
+            <option value="2" selected>{{ t("Media") }}</option>
+            <option value="3">{{ t("Baja") }}</option>
           </select>
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-due">Fecha límite</label>
+          <label class="field-etiqueta" for="nt-due">{{ t("Fecha límite") }}</label>
           <input class="field-control" id="nt-due" name="due_date"
                  type="date" required>
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-mins">Duración (min)</label>
+          <label class="field-etiqueta" for="nt-mins">{{ t("Duración (min)") }}</label>
           <input class="field-control" id="nt-mins" name="estimated_minutes"
                  type="number" min="1" max="480" value="30">
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-start">Hora inicio (opcional)</label>
+          <label class="field-etiqueta" for="nt-start">{{ t("Hora inicio (opcional)") }}</label>
           <input class="field-control" id="nt-start" name="start_time"
                  type="time">
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-end">Hora fin (opcional)</label>
+          <label class="field-etiqueta" for="nt-end">{{ t("Hora fin (opcional)") }}</label>
           <input class="field-control" id="nt-end" name="end_time"
                  type="time">
         </div>
 
         <div class="field">
-          <label class="field-etiqueta" for="nt-column">Columna inicial</label>
+          <label class="field-etiqueta" for="nt-column">{{ t("Columna inicial") }}</label>
           <select class="field-control" id="nt-column" name="kanban_column">
-            <option value="todo" selected>Por hacer</option>
-            <option value="backlog">Backlog</option>
-            <option value="ongoing">En curso</option>
-            <option value="done">Hecho</option>
+            <option value="todo" selected>{{ t("Por hacer") }}</option>
+            <option value="backlog">{{ t("Backlog") }}</option>
+            <option value="ongoing">{{ t("En curso") }}</option>
+            <option value="done">{{ t("Hecho") }}</option>
           </select>
         </div>
 
@@ -274,9 +258,9 @@
            cortesia visual; la ruta lo rechaza igual. #}
         {% if usuarios and has_permission('tarea.asignar') %}
         <div class="field">
-          <label class="field-etiqueta" for="nt-assigned">Asignar a compañero (opcional)</label>
+          <label class="field-etiqueta" for="nt-assigned">{{ t("Asignar a compañero (opcional)") }}</label>
           <select class="field-control" id="nt-assigned" name="assigned_to">
-            <option value="" selected>Para mí (Sin asignar)</option>
+            <option value="" selected>{{ t("Para mí (Sin asignar)") }}</option>
             {% for u in usuarios %}
               <option value="{{ u.id }}">{{ u.username }} {% if u.full_name %}({{ u.full_name }}){% endif %}</option>
             {% endfor %}
@@ -288,8 +272,8 @@
 
     <div class="modal-pie">
       <button class="btn btn--ghost" type="button"
-              onclick="this.closest('dialog').close()">Cancelar</button>
-      <button class="btn btn--primary" type="submit">Agregar actividad</button>
+              onclick="this.closest('dialog').close()">{{ t("Cancelar") }}</button>
+      <button class="btn btn--primary" type="submit">{{ t("Agregar actividad") }}</button>
     </div>
   </form>
 </dialog>

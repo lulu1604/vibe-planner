@@ -20,20 +20,18 @@
   <p>
     {{ usuario.full_name or "Sin nombre completo" }} ·
     {% if usuario.is_active %}
-      <span class="badge badge--activa">Activa</span>
+      <span class="badge badge--activa">{{ t("Activa") }}</span>
     {% else %}
-      <span class="badge badge--inactiva">Desactivada</span>
+      <span class="badge badge--inactiva">{{ t("Desactivada") }}</span>
     {% endif %}
     {% if usuario.id == yo %}
-      <span class="badge badge--tu">es tu cuenta</span>
+      <span class="badge badge--tu">{{ t("es tu cuenta") }}</span>
     {% endif %}
   </p>
 {% endblock %}
 
 {% block acciones %}
-  <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">
-    Volver al listado
-  </a>
+  <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">{{ t("Volver al listado") }}</a>
 {% endblock %}
 
 {% block content %}
@@ -45,38 +43,33 @@
        1. Datos
        ================================================================ #}
     <div class="card">
-      <h2 class="card-titulo">Datos de la cuenta</h2>
+      <h2 class="card-titulo">{{ t("Datos de la cuenta") }}</h2>
 
       <form method="post" action="{{ url_for('admin.editar_datos', user_id=usuario.id) }}"
             novalidate>
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
         <div class="field">
-          <label class="field-etiqueta" for="campo-username-fijo">Nombre de usuario</label>
+          <label class="field-etiqueta" for="campo-username-fijo">{{ t("Nombre de usuario") }}</label>
           {# No se edita, y se dice por que: un campo bloqueado sin explicacion
              se lee como un fallo de la aplicacion. #}
           <input class="field-control" id="campo-username-fijo" type="text"
                  value="{{ usuario.username }}" disabled>
-          <span class="field-ayuda">
-            No se puede cambiar: es la identidad con la que entra y con la que
-            la ven los demas.
-          </span>
+          <span class="field-ayuda">{{ t("No se puede cambiar: es la identidad con la que entra y con la que la ven los demas.") }}</span>
         </div>
 
         {% if has_permission('usuario.editar') %}
           {{ campo("full_name", REGLAS.full_name, datos, errores, requerido=false) }}
           {{ campo("email", REGLAS.email, datos, errores, tipo="email") }}
 
-          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
-            Guardar datos
-          </button>
+          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">{{ t("Guardar datos") }}</button>
         {% else %}
           <div class="field">
-            <span class="field-etiqueta">Nombre completo</span>
+            <span class="field-etiqueta">{{ t("Nombre completo") }}</span>
             <p>{{ usuario.full_name or "—" }}</p>
           </div>
           <div class="field">
-            <span class="field-etiqueta">Correo</span>
+            <span class="field-etiqueta">{{ t("Correo") }}</span>
             <p>{{ usuario.email }}</p>
           </div>
         {% endif %}
@@ -88,7 +81,7 @@
        ================================================================ #}
     {% if has_permission('rol.asignar') %}
       <div class="card">
-        <h2 class="card-titulo">Roles</h2>
+        <h2 class="card-titulo">{{ t("Roles") }}</h2>
 
         <form method="post" action="{{ url_for('admin.cambiar_roles', user_id=usuario.id) }}">
           <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -105,8 +98,7 @@
             {% endfor %}
           </div>
 
-          <p class="field-ayuda" style="margin:var(--space-3) 0;">
-            Los permisos son la <strong>suma</strong> de todos los roles. El
+          <p class="field-ayuda" style="margin:var(--space-3) 0;">{{ t("Los permisos son la") }}<strong>{{ t("suma") }}</strong> de todos los roles. El
             cambio surte efecto en la siguiente pagina que cargue esta persona,
             sin que tenga que cerrar sesion.
           </p>
@@ -118,9 +110,7 @@
             </div>
           {% endif %}
 
-          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">
-            Guardar roles
-          </button>
+          <button class="btn btn--primary" type="submit" data-enviando="Guardando...">{{ t("Guardar roles") }}</button>
         </form>
       </div>
     {% endif %}
@@ -130,7 +120,7 @@
        ================================================================ #}
     {% if has_permission('usuario.editar') %}
       <div class="card">
-        <h2 class="card-titulo">Contrasena</h2>
+        <h2 class="card-titulo">{{ t("Contrasena") }}</h2>
 
         <form method="post"
               action="{{ url_for('admin.restablecer_password', user_id=usuario.id) }}"
@@ -147,7 +137,7 @@
           </p>
 
           <div class="field">
-            <label class="field-etiqueta" for="campo-clave-nueva">Nueva contrasena</label>
+            <label class="field-etiqueta" for="campo-clave-nueva">{{ t("Nueva contrasena") }}</label>
             <input class="field-control" id="campo-clave-nueva" name="password"
                    type="password" required
                    minlength="{{ REGLAS.password.min }}"
@@ -157,9 +147,7 @@
             <span class="field-ayuda" id="ayuda-clave-nueva">{{ REGLAS.password.ayuda }}</span>
           </div>
 
-          <button class="btn btn--secondary" type="submit" data-enviando="Guardando...">
-            Restablecer contrasena
-          </button>
+          <button class="btn btn--secondary" type="submit" data-enviando="Guardando...">{{ t("Restablecer contrasena") }}</button>
         </form>
       </div>
     {% endif %}
@@ -169,30 +157,21 @@
        ================================================================ #}
     {% if has_permission('usuario.desactivar') %}
       <div class="card">
-        <h2 class="card-titulo">Estado de la cuenta</h2>
+        <h2 class="card-titulo">{{ t("Estado de la cuenta") }}</h2>
 
         {% if usuario.id == yo %}
           {# Prevenir antes que explicar: el boton no existe en tu propia
              cuenta, no aparece y luego te dice que no. #}
-          <p class="text-muted">
-            No puedes desactivar tu propia cuenta. Pideselo a otro
-            administrador.
-          </p>
+          <p class="text-muted">{{ t("No puedes desactivar tu propia cuenta. Pideselo a otro administrador.") }}</p>
 
         {% elif usuario.is_active %}
-          <p style="margin-bottom:var(--space-4);">
-            La cuenta esta <strong>activa</strong>. Al desactivarla no podra
-            iniciar sesion, pero <strong>sus tareas y eventos no se borran</strong>
-            y puedes reactivarla cuando quieras.
-          </p>
+          <p style="margin-bottom:var(--space-4);">{{ t("La cuenta esta") }}<strong>{{ t("activa") }}</strong>. Al desactivarla no podra
+            iniciar sesion, pero <strong>{{ t("sus tareas y eventos no se borran") }}</strong>{{ t("y puedes reactivarla cuando quieras.") }}</p>
           <button class="btn btn--danger" type="button"
-                  data-abre-modal="modal-desactivar">
-            Desactivar cuenta
-          </button>
+                  data-abre-modal="modal-desactivar">{{ t("Desactivar cuenta") }}</button>
 
         {% else %}
-          <p style="margin-bottom:var(--space-4);">
-            La cuenta esta <strong>desactivada</strong>. Al reactivarla volvera
+          <p style="margin-bottom:var(--space-4);">{{ t("La cuenta esta") }}<strong>{{ t("desactivada") }}</strong>. Al reactivarla volvera
             a entrar con su contrasena de siempre y recuperara todo lo que
             tenia.
           </p>
@@ -202,9 +181,7 @@
             <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <input type="hidden" name="volver" value="detalle">
             <input type="hidden" name="is_active" value="1">
-            <button class="btn btn--primary" type="submit" data-enviando="Reactivando...">
-              Reactivar cuenta
-            </button>
+            <button class="btn btn--primary" type="submit" data-enviando="Reactivando...">{{ t("Reactivar cuenta") }}</button>
           </form>
         {% endif %}
       </div>
@@ -215,15 +192,13 @@
      Permisos efectivos: documentacion viva del modelo agregativo
      ================================================================ #}
   <div class="card" style="margin-top:var(--space-6);">
-    <h2 class="card-titulo">Permisos efectivos</h2>
+    <h2 class="card-titulo">{{ t("Permisos efectivos") }}</h2>
     <p class="text-muted" style="margin-bottom:var(--space-4);">
       Los {{ permisos|length }} permisos que tiene esta cuenta ahora mismo,
       como union de sus roles. Es lo que comprueba el servidor en cada peticion.
     </p>
     <details>
-      <summary style="cursor:pointer; font-weight:600; color:var(--teal-700);">
-        Ver la lista completa
-      </summary>
+      <summary style="cursor:pointer; font-weight:600; color:var(--teal-700);">{{ t("Ver la lista completa") }}</summary>
       <ul style="display:flex; flex-wrap:wrap; gap:var(--space-2);
                  margin-top:var(--space-3);">
         {% for permiso in permisos %}
@@ -252,16 +227,13 @@
         </div>
 
         <div class="modal-cuerpo">
-          <p>No podra iniciar sesion mientras este desactivada.</p>
-          <p><strong>Sus tareas y eventos no se borran</strong> y puedes
-             reactivarla cuando quieras desde esta misma pantalla.</p>
+          <p>{{ t("No podra iniciar sesion mientras este desactivada.") }}</p>
+          <p><strong>{{ t("Sus tareas y eventos no se borran") }}</strong>{{ t("y puedes reactivarla cuando quieras desde esta misma pantalla.") }}</p>
         </div>
 
         <div class="modal-pie">
-          <button class="btn btn--secondary" type="button" data-cierra-modal>Cancelar</button>
-          <button class="btn btn--danger" type="submit" data-enviando="Desactivando...">
-            Desactivar cuenta
-          </button>
+          <button class="btn btn--secondary" type="button" data-cierra-modal>{{ t("Cancelar") }}</button>
+          <button class="btn btn--danger" type="submit" data-enviando="Desactivando...">{{ t("Desactivar cuenta") }}</button>
         </div>
       </form>
     </dialog>

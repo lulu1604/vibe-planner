@@ -4,7 +4,7 @@
 {% block title %}Entrar · VibePlanner{% endblock %}
 
 {% block content %}
-  <h1 class="card-titulo">Entrar</h1>
+  <h1 class="card-titulo">{{ t("Entrar") }}</h1>
 
   {#
     El error del login va arriba y es uno solo, no debajo de cada campo.
@@ -24,7 +24,7 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <div class="field">
-      <label class="field-etiqueta" for="campo-username">Nombre de usuario</label>
+      <label class="field-etiqueta" for="campo-username">{{ t("Nombre de usuario") }}</label>
       <input class="field-control" id="campo-username" name="username" type="text"
              value="{{ datos.get('username', '') }}"
              required autofocus
@@ -33,7 +33,7 @@
     </div>
 
     <div class="field">
-      <label class="field-etiqueta" for="campo-password">Contrasena</label>
+      <label class="field-etiqueta" for="campo-password">{{ t("Contrasena") }}</label>
       {#
         Sin minlength ni pattern aqui a proposito. En el login no se valida el
         formato de la contrasena: si el campo rechazara una contrasena de 6
@@ -46,12 +46,10 @@
              {% if error %}aria-invalid="true"{% endif %}>
     </div>
 
-    <button class="btn btn--primary btn--bloque" type="submit" data-enviando="Entrando...">
-      Entrar
-    </button>
+    <button class="btn btn--primary btn--bloque" type="submit" data-enviando="Entrando...">{{ t("Entrar") }}</button>
   </form>
 {% endblock %}
 
 {% block pie %}
-  Aun no tienes cuenta? <a href="{{ url_for('auth.register') }}">Crear una cuenta</a>
+  Aun no tienes cuenta? <a href="{{ url_for('auth.register') }}">{{ t("Crear una cuenta") }}</a>
 {% endblock %}

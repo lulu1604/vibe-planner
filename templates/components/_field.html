@@ -14,7 +14,10 @@
 
 {% macro campo(nombre, regla, datos={}, errores={}, tipo="text",
                requerido=true, autofocus=false, autocomplete=none) %}
+  {# Los mensajes de validators.py pasan por t(): si no hay traduccion
+     sale el castellano, que es el respaldo correcto. #}
   {% set error = errores.get(nombre) %}
+  {% set error = t(error) if error else error %}
   {% set id_campo = "campo-" ~ nombre %}
   {% set id_ayuda = id_campo ~ "-ayuda" %}
   {% set id_error = id_campo ~ "-error" %}
@@ -22,7 +25,7 @@
   <div class="field">
     {# La etiqueta va SIEMPRE visible y encima. Nunca solo placeholder: el
        placeholder desaparece al escribir y el usuario ya no sabe que campo es. #}
-    <label class="field-etiqueta" for="{{ id_campo }}">{{ regla.etiqueta }}</label>
+    <label class="field-etiqueta" for="{{ id_campo }}">{{ t(regla.etiqueta) }}</label>
 
     <input class="field-control"
            id="{{ id_campo }}"
@@ -43,7 +46,7 @@
            aria-describedby="{{ id_ayuda }}{% if error %} {{ id_error }}{% endif %}">
 
     {% if regla.ayuda %}
-      <span class="field-ayuda" id="{{ id_ayuda }}">{{ regla.ayuda }}</span>
+      <span class="field-ayuda" id="{{ id_ayuda }}">{{ t(regla.ayuda) }}</span>
     {% endif %}
 
     {% if error %}

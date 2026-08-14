@@ -12,7 +12,7 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
     <div class="modal-cabecera">
-      <h2 id="titulo-nueva-cuenta">Nueva cuenta</h2>
+      <h2 id="titulo-nueva-cuenta">{{ t("Nueva cuenta") }}</h2>
       {# Una de las tres formas de cerrar. Las otras dos -- Escape y clic
          fuera -- las dan <dialog> y ui.js. #}
       <button class="modal-cerrar" type="button" aria-label="Cerrar"
@@ -26,9 +26,7 @@
       {{ campo("password", REGLAS.password, datos, errores, tipo="password") }}
 
       <fieldset style="border:0; padding:0; margin:0 0 var(--space-4);">
-        <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-2);">
-          Roles
-        </legend>
+        <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-2);">{{ t("Roles") }}</legend>
 
         <div class="field-casillas">
           {% for rol in catalogo_roles %}
@@ -55,10 +53,8 @@
     <div class="modal-pie">
       {# H3: cancelar SIEMPRE visible, al lado de guardar. No basta con el
          boton "atras" del navegador. #}
-      <button class="btn btn--secondary" type="button" data-cierra-modal>Cancelar</button>
-      <button class="btn btn--primary" type="submit" data-enviando="Creando...">
-        Crear cuenta
-      </button>
+      <button class="btn btn--secondary" type="button" data-cierra-modal>{{ t("Cancelar") }}</button>
+      <button class="btn btn--primary" type="submit" data-enviando="Creando...">{{ t("Crear cuenta") }}</button>
     </div>
   </form>
 </dialog>
