@@ -75,7 +75,8 @@ def _nombres_de_roles(codigos, catalogo):
     return ", ".join(nombres[:-1]) + " y " + nombres[-1]
 
 
-def _pintar_listado(datos=None, errores=None, form_abierto=False, codigo=200):
+def _pintar_listado(datos=None, errores=None, form_abierto=False, codigo=200,
+                    roles_marcados=None):
     """
     Dibuja la pantalla de usuarios.
 
@@ -112,6 +113,10 @@ def _pintar_listado(datos=None, errores=None, form_abierto=False, codigo=200):
         busqueda=busqueda,
         datos=datos or {},
         errores=errores or {},
+        # Sin esto, un error de validacion borraba las casillas de rol que la
+        # persona acababa de marcar: reenviaba el formulario creyendo que el
+        # admin seguia marcado y la cuenta nacia solo con `usuario`.
+        roles_marcados=roles_marcados or [],
         form_abierto=form_abierto,
         seccion_activa="admin",
         REGLAS=validators.REGLAS,
@@ -232,6 +237,7 @@ def crear_usuario():
             errores=errores,
             form_abierto=True,
             codigo=400,
+            roles_marcados=roles,
         )
 
     user_id = repo_users.create_user(datos, roles, granted_by=security.current_user_id())
@@ -250,6 +256,7 @@ def crear_usuario():
             errores=errores or {"username": "No se pudo crear la cuenta."},
             form_abierto=True,
             codigo=409,
+            roles_marcados=roles,
         )
 
     nombres = _nombres_de_roles(roles, repo_users.list_roles())

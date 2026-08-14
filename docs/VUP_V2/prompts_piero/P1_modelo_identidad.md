@@ -197,7 +197,7 @@ sqlite3 vibe_planner.db "SELECT u.username, r.code FROM users u JOIN user_roles 
 La última consulta debe devolver **dos filas** para la cuenta admin:
 `admin|usuario` y `admin|admin`. **Eso es lo agregativo, funcionando.**
 
-- [ ] `python seed.py` crea 23 permisos y 2 roles
+- [ ] `python seed.py` crea 24 permisos y 2 roles
 - [ ] Ejecutarlo dos veces no duplica nada
 - [ ] La cuenta admin tiene dos filas en `user_roles`
 - [ ] Sus permisos efectivos incluyen `planner.ver` **y** `usuario.listar`

@@ -213,7 +213,7 @@ auth.py           /register /login /logout
 admin.py          /admin/usuarios  (listado, alta, detalle, roles, estado, clave)
 perfil.py         /perfil
 home.py           /inicio  con el menu filtrado por permisos
-seed.py           23 permisos, 2 roles y el administrador inicial
+seed.py           24 permisos, 2 roles y el administrador inicial
 schema_v2.sql     esquema de identidad (5 tablas)
 database.py       conexion por peticion + PRAGMAs
 scoring.py        motor de puntuacion (sin cambios desde la v1)

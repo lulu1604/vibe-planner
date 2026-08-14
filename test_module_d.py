@@ -184,35 +184,32 @@ def main():
     print("\n--- Metricas propias (US14) ---")
 
     # ---------------------------------------------------------------- TC-37
+    #
+    # Este caso vivia dentro de un `if "user_id" in _columnas(...)` que jamas se
+    # cumplia, porque metrics apuntaba a la tabla `tasks` de la v1. Se omitia
+    # en verde, y ese silencio es lo que tapo durante toda la integracion que
+    # /metricas no contaba ni una tarea. Ahora corre siempre: si vuelve a
+    # apuntar a la tabla equivocada, esto FALLA en vez de omitirse.
     with app.app_context():
-        columnas = metrics._columnas(metrics.TABLA_TAREAS)
-        tiene_user_id = "user_id" in columnas
+        db = database.get_db()
+        reparto = [("Trabajo", 4, 3), ("Personal", 2, 1), ("Actividades", 2, 2)]
+        for categoria, total, hechas in reparto:
+            for indice in range(total):
+                db.execute(
+                    """INSERT INTO tasks_v2 (user_id, title, category, due_date,
+                                             estimated_minutes, kanban_column)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (admin_id, MARCADOR_TAREA, categoria, hoy, 30,
+                     "done" if indice < hechas else "todo"),
+                )
+        db.commit()
+        resumen = metrics.daily_summary(admin_id, hoy)
 
-    if tiene_user_id:
-        with app.app_context():
-            db = database.get_db()
-            reparto = [("Trabajo", 4, 3), ("Personal", 2, 1), ("Actividades", 2, 2)]
-            for categoria, total, hechas in reparto:
-                for indice in range(total):
-                    db.execute(
-                        """INSERT INTO tasks (user_id, title, category, due_date,
-                                              estimated_minutes, status)
-                           VALUES (?, ?, ?, ?, ?, ?)""",
-                        (admin_id, MARCADOR_TAREA, categoria, hoy, 30,
-                         "completed" if indice < hechas else "pending"),
-                    )
-            db.commit()
-            resumen = metrics.daily_summary(admin_id, hoy)
-
-        comprobar("TC-37", "6 de 8 actividades dan 75 % agrupadas en tres secciones",
-                  resumen["tareas"]["porcentaje"] == 75.0
-                  and sum(s["total"] for s in resumen["secciones"].values()) == 8
-                  and list(resumen["secciones"].keys())[:3] == ["Trabajo", "Personal", "Actividades"],
-                  "porcentaje=%s" % resumen["tareas"]["porcentaje"])
-    else:
-        omitir("TC-37", "el Modulo B aun no ha anadido user_id a `tasks`")
-        with app.app_context():
-            resumen = metrics.daily_summary(admin_id, hoy)
+    comprobar("TC-37", "6 de 8 actividades dan 75 % agrupadas en tres secciones",
+              resumen["tareas"]["porcentaje"] == 75.0
+              and sum(s["total"] for s in resumen["secciones"].values()) == 8
+              and list(resumen["secciones"].keys())[:3] == ["Trabajo", "Personal", "Actividades"],
+              "porcentaje=%s" % resumen["tareas"]["porcentaje"])
 
     # ---------------------------------------------------------------- TC-38
     # Cuenta recien creada: cero de todo. Es lo primero que ve un usuario nuevo.
@@ -227,12 +224,7 @@ def main():
     # Los habitos se reportan APARTE: ni suman ni restan al % de actividades.
     sin_clave = "porcentaje" not in resumen["habitos"]
     claves_ok = set(resumen["habitos"].keys()) == {"marcados", "total"}
-    if tiene_user_id:
-        no_contamina = resumen["tareas"]["porcentaje"] == 75.0
-    else:
-        # Sin tareas conectadas, el % debe seguir en 0 pese a haber habitos
-        # marcados: si los habitos se colaran, aqui saldria distinto de 0.
-        no_contamina = resumen["tareas"]["porcentaje"] == 0.0
+    no_contamina = resumen["tareas"]["porcentaje"] == 75.0
     comprobar("TC-39", "los habitos van aparte del porcentaje de actividades",
               sin_clave and claves_ok and no_contamina,
               "habitos=%s tareas=%s" % (resumen["habitos"], resumen["tareas"]))

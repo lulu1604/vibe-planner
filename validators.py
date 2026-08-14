@@ -44,6 +44,15 @@ PASSWORD_MIN = config.MIN_PASSWORD_LENGTH   # 8
 PASSWORD_MAX = config.MAX_PASSWORD_LENGTH   # 128
 SEARCH_MAX = 60
 
+# Titulo y descripcion de CUALQUIER cosa que el usuario crea: tarea, evento o
+# habito. Un solo numero para los tres modulos.
+#
+# Antes cada uno tenia el suyo -- 120 en tareas, 80 en habitos y ninguno en el
+# calendario, que tragaba 9.000 caracteres por la ruta de edicion -- asi que el
+# mismo tipo de campo se comportaba distinto segun la pantalla.
+TITULO_MAX = 120
+DESCRIPCION_MAX = 500
+
 # Sin regex entran espacios, emojis y '../'; y un '@' haria ambiguo el login.
 # El `pattern` del HTML va sin ^ $ porque el navegador ya lo ancla solo.
 USERNAME_PATTERN = r"[a-z][a-z0-9._]{2,19}"

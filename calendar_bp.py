@@ -26,16 +26,28 @@ import config
 import fechas
 import repo_events
 import security
+import validators
 
 calendar_bp = Blueprint("calendar_bp", __name__)
 
 ALLOWED_COLORS = getattr(config, "ALLOWED_COLORS", ("#2F4156", "#567C8D", "#C8D9E6", "#D7707F", "#9DA3A4", "#4C4D53"))
+DEFAULT_COLOR = "#567C8D"
 
 # Lista blanca de estados. Tiene que coincidir con el CHECK de `events` en
 # schema_v2.sql: si un valor de fuera llega al UPDATE, SQLite lanza
 # IntegrityError y el usuario ve un 500 en vez de un mensaje.
 ALLOWED_STATUS = ("tentativo", "confirmado", "cancelado")
 DEFAULT_STATUS = "confirmado"
+
+# El unico formato que entra a la base. Parsear con el rechaza '2026-13-45' y
+# '25:99', y formatear con el garantiza que '2026-9-10' se guarde como
+# '2026-09-10' -- si no, el evento desaparece de la cuadricula del mes.
+FORMATO_FECHA_HORA = "%Y-%m-%d %H:%M"
+
+# Los topes salen de validators.py, que es la fuente unica para los tres
+# modulos. Antes el calendario no tenia ninguno.
+TITULO_MAX = validators.TITULO_MAX
+DESCRIPCION_MAX = validators.DESCRIPCION_MAX
 
 
 def _current_local_year_month():
@@ -110,56 +122,114 @@ def month_view(year, month):
     )
 
 
+def _validar_evento(form):
+    """
+    Valida el formulario de evento. La usan CREAR y EDITAR, las dos.
+
+    Antes eran el mismo codigo copiado, y ahi nacieron dos defectos que solo
+    tenia una de las copias. Con una funcion, arreglar uno arregla los dos.
+
+    Lo importante es que las fechas se PARSEAN, no se comparan como cadenas.
+    Con `start_date='abc'` la version anterior construia 'abc 09:00', la
+    comparacion 'abc 10:00' <= 'abc 09:00' daba False -- asi que pasaba la
+    validacion -- la fila SE GUARDABA, y el 500 llegaba despues, al hacer
+    int('abc') para el redirect. El CHECK (end_at > start_at) del esquema
+    tampoco frenaba nada, porque en SQLite tambien es comparacion de texto.
+
+    Y fechas plausibles pero no canonicas ('2026-9-10') se guardaban tal cual:
+    el evento desaparecia de los doce meses, porque el rango del mes compara
+    contra 'YYYY-MM-DD'. Un evento bueno quedaba invisible al editarlo.
+
+    Devuelve (datos, errores). `datos` trae start_at y end_at ya en forma
+    canonica y un objeto datetime `inicio` para calcular el redirect sin
+    volver a trocear cadenas.
+    """
+    errores = []
+
+    title = (form.get("title") or "").strip()
+    if not title:
+        errores.append("El titulo del evento es obligatorio.")
+    elif len(title) > TITULO_MAX:
+        errores.append("El titulo no puede pasar de %d caracteres." % TITULO_MAX)
+
+    description = (form.get("description") or "").strip()
+    if len(description) > DESCRIPCION_MAX:
+        errores.append("La descripcion no puede pasar de %d caracteres." % DESCRIPCION_MAX)
+
+    start_date = (form.get("start_date") or "").strip()
+    start_time = (form.get("start_time") or "09:00").strip()
+    end_date = (form.get("end_date") or start_date).strip()
+    end_time = (form.get("end_time") or "10:00").strip()
+
+    inicio = _parsear(start_date, start_time, "fecha u hora de inicio", errores)
+    fin = _parsear(end_date, end_time, "fecha u hora de fin", errores)
+
+    if inicio and fin and fin <= inicio:
+        errores.append("La hora de fin debe ser posterior a la de inicio.")
+
+    # Color y estado: lo que no este en la lista blanca cae al valor por
+    # defecto en silencio. No es un error del usuario -- el formulario solo
+    # ofrece valores validos -- asi que solo puede venir de una manipulacion.
+    color = (form.get("color") or DEFAULT_COLOR).strip()
+    if color not in ALLOWED_COLORS:
+        color = DEFAULT_COLOR
+
+    status = (form.get("status") or DEFAULT_STATUS).strip()
+    if status not in ALLOWED_STATUS:
+        status = DEFAULT_STATUS
+
+    if errores:
+        return None, errores
+
+    return {
+        "title": title,
+        "description": description,
+        # Siempre la forma canonica que produce strptime, nunca la cadena que
+        # escribio el navegador: asi la base solo recibe 'YYYY-MM-DD HH:MM'.
+        "start_at": inicio.strftime(FORMATO_FECHA_HORA),
+        "end_at": fin.strftime(FORMATO_FECHA_HORA),
+        "color": color,
+        "status": status,
+        "inicio": inicio,
+    }, []
+
+
+def _parsear(fecha, hora, etiqueta, errores):
+    """Convierte fecha + hora en datetime, o anota el error y devuelve None."""
+    if not fecha:
+        errores.append("Debes indicar la %s." % etiqueta)
+        return None
+    try:
+        return datetime.strptime("%s %s" % (fecha, hora), FORMATO_FECHA_HORA)
+    except ValueError:
+        errores.append("La %s no es valida. Usa el selector del formulario." % etiqueta)
+        return None
+
+
 @calendar_bp.route("/eventos/nuevo", methods=["GET", "POST"])
 @security.requires("evento.crear")
 def create_event():
     user_id = security.current_user_id()
 
     if request.method == "POST":
-        title = (request.form.get("title") or "").strip()
-        description = (request.form.get("description") or "").strip()
-        start_date = (request.form.get("start_date") or "").strip()
-        start_time = (request.form.get("start_time") or "09:00").strip()
-        end_date = (request.form.get("end_date") or start_date).strip()
-        end_time = (request.form.get("end_time") or "10:00").strip()
-        color = (request.form.get("color") or "#567C8D").strip()
-
-        start_at = f"{start_date} {start_time}"
-        end_at = f"{end_date} {end_time}"
-
-        # Validaciones de servidor
-        errores = []
-        if not title:
-            errores.append("El título del evento es obligatorio.")
-        if not start_date or not end_date:
-            errores.append("Debes especificar las fechas de inicio y fin.")
-        if end_at <= start_at:
-            errores.append("La hora de fin debe ser posterior a la de inicio.")
-        if color not in ALLOWED_COLORS:
-            color = "#567C8D"
+        datos, errores = _validar_evento(request.form)
 
         if errores:
             for err in errores:
                 flash(err, "error")
-            return render_template("calendario/evento_form.html", allowed_colors=ALLOWED_COLORS, form=request.form)
+            # `form=request.form` conserva lo que la persona ya habia escrito.
+            return render_template("calendario/evento_form.html",
+                                   allowed_colors=ALLOWED_COLORS, form=request.form)
 
-        data = {
-            "title": title,
-            "description": description,
-            "start_at": start_at,
-            "end_at": end_at,
-            "color": color,
-            "status": "confirmado"
-        }
-        event_id = repo_events.create(data, user_id)
-        flash("Evento creado exitosamente.", "ok")
-
-        year = int(start_date.split("-")[0])
-        month = int(start_date.split("-")[1])
-        return redirect(url_for("calendar_bp.month_view", year=year, month=month))
+        inicio = datos.pop("inicio")
+        repo_events.create(datos, user_id)
+        flash("Evento creado.", "ok")
+        return redirect(url_for("calendar_bp.month_view",
+                                year=inicio.year, month=inicio.month))
 
     default_date = request.args.get("date", fechas.hoy_iso())
-    return render_template("calendario/evento_form.html", allowed_colors=ALLOWED_COLORS, default_date=default_date)
+    return render_template("calendario/evento_form.html",
+                           allowed_colors=ALLOWED_COLORS, default_date=default_date)
 
 
 @calendar_bp.route("/eventos/<int:event_id>/editar", methods=["GET", "POST"])
@@ -171,58 +241,25 @@ def edit_event(event_id):
         abort(404)
 
     if request.method == "POST":
-        title = (request.form.get("title") or "").strip()
-        description = (request.form.get("description") or "").strip()
-        start_date = (request.form.get("start_date") or "").strip()
-        start_time = (request.form.get("start_time") or "09:00").strip()
-        end_date = (request.form.get("end_date") or start_date).strip()
-        end_time = (request.form.get("end_time") or "10:00").strip()
-        color = (request.form.get("color") or "#567C8D").strip()
-
-        start_at = f"{start_date} {start_time}"
-        end_at = f"{end_date} {end_time}"
-
-        # Las MISMAS validaciones que /eventos/nuevo. Cuando solo valida el alta,
-        # basta con editar un evento para dejarlo sin titulo: invisible en la
-        # cuadricula y sin forma de recuperarlo desde la interfaz.
-        errores = []
-        if not title:
-            errores.append("El titulo del evento es obligatorio.")
-        if not start_date or not end_date:
-            errores.append("Debes especificar las fechas de inicio y fin.")
-        if end_at <= start_at:
-            errores.append("La hora de fin debe ser posterior a la de inicio.")
+        datos, errores = _validar_evento(request.form)
 
         if errores:
             for err in errores:
                 flash(err, "error")
-            return render_template("calendario/evento_form.html", event=event, allowed_colors=ALLOWED_COLORS)
+            # `form` ademas de `event`: sin el, un error borraba de la pantalla
+            # todo lo que la persona acababa de teclear y la dejaba mirando los
+            # valores viejos, sin entender que se habia perdido.
+            return render_template("calendario/evento_form.html", event=event,
+                                   allowed_colors=ALLOWED_COLORS, form=request.form)
 
-        if color not in ALLOWED_COLORS:
-            color = "#567C8D"
-
-        # `status` llega del formulario y va directo a una columna con CHECK.
-        # Sin esta lista blanca, un valor cualquiera revienta en IntegrityError
-        # y el usuario ve un 500. El color ya se filtraba; el estado no.
-        status = request.form.get("status", DEFAULT_STATUS)
-        if status not in ALLOWED_STATUS:
-            status = DEFAULT_STATUS
-
-        data = {
-            "title": title,
-            "description": description,
-            "start_at": start_at,
-            "end_at": end_at,
-            "color": color,
-            "status": status,
-        }
-        repo_events.update_owned(event_id, user_id, data)
+        inicio = datos.pop("inicio")
+        repo_events.update_owned(event_id, user_id, datos)
         flash("Evento actualizado.", "ok")
-        year = int(start_date.split("-")[0])
-        month = int(start_date.split("-")[1])
-        return redirect(url_for("calendar_bp.month_view", year=year, month=month))
+        return redirect(url_for("calendar_bp.month_view",
+                                year=inicio.year, month=inicio.month))
 
-    return render_template("calendario/evento_form.html", event=event, allowed_colors=ALLOWED_COLORS)
+    return render_template("calendario/evento_form.html", event=event,
+                           allowed_colors=ALLOWED_COLORS)
 
 
 @calendar_bp.route("/eventos/<int:event_id>/eliminar", methods=["POST"])

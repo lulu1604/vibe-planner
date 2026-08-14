@@ -106,7 +106,7 @@ El mensaje de login fallido es **idéntico** para usuario inexistente y contrase
 incorrecta. Si difieren, se pueden enumerar las cuentas válidas.
 
 ### 6. Semilla (`seed.py`)
-23 permisos, **2 roles** (`usuario` y `admin`) y el administrador inicial. **Idempotente:** cada vez que un
+24 permisos, **2 roles** (`usuario` y `admin`) y el administrador inicial. **Idempotente:** cada vez que un
 módulo añade un permiso, se vuelve a ejecutar y queda sembrado. Un permiso que
 existe en un decorador pero no en la tabla es un 403 permanente que nadie sabrá
 explicar.
@@ -152,7 +152,7 @@ tareas huérfanas de v1.
 
 ## ✅ Listo cuando
 
-- [ ] `python seed.py` crea 23 permisos, 2 roles y el administrador
+- [ ] `python seed.py` crea 24 permisos, 2 roles y el administrador
 - [ ] Puedo registrarme, entrar, salir y volver a entrar
 - [ ] `curl` con `role=admin` en el registro **no** otorga nada (**TC-03**)
 - [ ] La cuenta `admin` abre `/planner` y `/admin/usuarios` en la misma sesión (**TC-06**)

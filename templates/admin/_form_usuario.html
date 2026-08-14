@@ -38,7 +38,7 @@
               momento exacto en que a alguien le extrana no poder desmarcarlo.
             #}
             {{ casilla_rol(rol.code, rol.name, rol.description,
-                           marcada=(rol.code == 'usuario'),
+                           marcada=(rol.code == 'usuario' or rol.code in roles_marcados),
                            bloqueada=(rol.code == 'usuario'),
                            prefijo="nueva") }}
           {% endfor %}

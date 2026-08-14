@@ -267,7 +267,12 @@
           </select>
         </div>
 
-        {% if usuarios %}
+        {# El permiso, ademas de la lista. Sin el, el desplegable se pintaba a
+           todo el mundo, el servidor descartaba la asignacion y el mensaje
+           decia "Actividad creada.": la persona creia haber asignado algo que
+           en realidad se habia quedado en su propio planner. Ocultarlo es
+           cortesia visual; la ruta lo rechaza igual. #}
+        {% if usuarios and has_permission('tarea.asignar') %}
         <div class="field">
           <label class="field-etiqueta" for="nt-assigned">Asignar a compañero (opcional)</label>
           <select class="field-control" id="nt-assigned" name="assigned_to">

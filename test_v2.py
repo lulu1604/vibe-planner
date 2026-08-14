@@ -554,6 +554,101 @@ def main():
     r = ana_cli.get(f"/v2/api/task/{t_id}/score-breakdown")
     comprobar("TC-08   ...ni ver su desglose (404)", r.status_code == 404, r.status_code)
 
+    print("\n--- Los cuatro bloqueantes de la auditoria de preentrega ---")
+
+    # --- La cookie de sesion no viaja por http ---------------------------
+    #
+    # No se comprueba el Set-Cookie real, porque en local la variable de
+    # produccion no existe y la proteccion esta apagada A PROPOSITO: con
+    # SECURE=True sobre http://127.0.0.1 el navegador no devuelve la cookie y
+    # nadie podria iniciar sesion. Lo que se fija aqui es la REGLA: la cookie
+    # se endurece exactamente cuando hay VIBEPLANNER_SECRET, ni antes ni nunca.
+    import config as _config
+    comprobar("        la cookie se endurece si hay VIBEPLANNER_SECRET",
+              _config.SESSION_COOKIE_SECURE == bool(os.environ.get("VIBEPLANNER_SECRET")),
+              "SECURE=%s" % _config.SESSION_COOKIE_SECURE)
+    comprobar("        ...y app.py la aplica de verdad",
+              app.config.get("SESSION_COOKIE_SECURE") == _config.SESSION_COOKIE_SECURE)
+
+    # --- /metricas cuenta las tareas de verdad ---------------------------
+    #
+    # Este es el que se le escapo a TODAS las suites: metrics leia la tabla
+    # `tasks` de la v1, que no tiene user_id, asi que la pantalla decia "el
+    # modulo de actividades aun no esta conectado" con 0 tareas. Y el unico
+    # test que lo habria visto se auto-omitia con la MISMA condicion.
+    import fechas
+    import metrics
+    import repo_tasks
+    for titulo, columna in (("M-hecha", "done"), ("M-pendiente", "todo"),
+                            ("M-tambien", "todo")):
+        _post(jose_cli, "/v2/tasks", title=titulo, due_date=fechas.hoy_iso(),
+              estimated_minutes="30", priority_level="2", category="Trabajo")
+    with app.app_context():
+        db = database.raw_connection()
+        db.execute("UPDATE tasks_v2 SET kanban_column='done' WHERE title='M-hecha'")
+        db.commit()
+        db.close()
+        resumen = metrics.daily_summary(cal_jose, fechas.hoy_iso())
+
+    comprobar("        /metricas cuenta 1 de 3, no 0 de 0",
+              resumen["tareas"]["total"] == 3 and resumen["tareas"]["completadas"] == 1,
+              "%s" % resumen["tareas"])
+    comprobar("        ...y ya no dice que el planner no esta conectado",
+              resumen["tareas_conectadas"] is True)
+
+    with app.app_context():
+        progreso = repo_tasks.daily_progress(cal_jose, fechas.hoy_iso())
+    comprobar("        /planner y /metricas cuentan el MISMO conjunto",
+              progreso["total"] == resumen["tareas"]["total"]
+              and progreso["completed"] == resumen["tareas"]["completadas"],
+              "planner=%s metricas=%s" % (progreso, resumen["tareas"]))
+
+    # --- El calendario no guarda fechas basura ---------------------------
+    def _eventos():
+        with app.app_context():
+            db = database.raw_connection()
+            n = db.execute("SELECT COUNT(*) c FROM events").fetchone()["c"]
+            db.close()
+        return n
+
+    for basura in ("abc", "20260820", "2026-13-45"):
+        antes = _eventos()
+        r = _post(jose_cli, "/eventos/nuevo", title="Basura", start_date=basura,
+                  start_time="09:00", end_date=basura, end_time="10:00",
+                  color="#567C8D")
+        comprobar("        start_date=%-11r no revienta ni inserta" % basura,
+                  r.status_code != 500 and _eventos() == antes,
+                  "HTTP %s, filas %s -> %s" % (r.status_code, antes, _eventos()))
+
+    # Editar con una fecha no canonica hacia invisible un evento SANO.
+    _post(jose_cli, "/eventos/nuevo", title="T-SANO", start_date="2026-09-10",
+          start_time="09:00", end_date="2026-09-10", end_time="10:00", color="#567C8D")
+    with app.app_context():
+        db = database.raw_connection()
+        sano = db.execute("SELECT id FROM events WHERE title='T-SANO'").fetchone()["id"]
+        db.close()
+    _post(jose_cli, "/eventos/%d/editar" % sano, title="T-SANO",
+          start_date="2026-9-10", start_time="09:00",
+          end_date="2026-9-10", end_time="10:00", color="#567C8D")
+    html = jose_cli.get("/calendario/2026/9").get_data(as_text=True)
+    comprobar("        editar con '2026-9-10' no hace invisible el evento",
+              "T-SANO" in html, "el evento desaparecio de los 12 meses")
+
+    # --- La URL que escribe el JS existe ---------------------------------
+    #
+    # kanban.js pedia /tasks/<id>/column sin el prefijo /v2: 404 para toda
+    # tarjeta. Ninguna suite lo veia porque todas prueban la ruta del servidor,
+    # nunca la URL que escribe el cliente.
+    rutas_reales = {str(r) for r in app.url_map.iter_rules()}
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "static", "js", "kanban.js"), encoding="utf-8") as f:
+        js = f.read()
+    urls_js = re.findall(r"[\"'`](/[a-z0-9/_${}-]*column)[\"'`]", js)
+    rotas = [u for u in urls_js
+             if u.replace("${taskId}", "<int:task_id>") not in rutas_reales]
+    comprobar("        toda URL escrita en kanban.js existe en el servidor",
+              not rotas, rotas)
+
     print("\n--- Transversales ---")
 
     # --- CSRF -------------------------------------------------------------

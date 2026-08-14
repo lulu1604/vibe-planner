@@ -76,7 +76,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 2. Persistir en el servidor
       try {
-        const res = await fetch(`/tasks/${taskId}/column`, {
+        // La URL la emite la plantilla con url_for, igual que CSRF_TOKEN.
+        // Escrita a mano decia "/tasks/<id>/column" -- sin el prefijo /v2 que
+        // lleva el blueprint -- y daba 404 para toda tarjeta y todo usuario:
+        // la tarjeta saltaba a la columna nueva y volvia sola. El servidor
+        // estaba bien; la URL del cliente se quedo atras en un merge.
+        // Con url_for, renombrar la ruta no puede volver a desincronizarla.
+        const url = typeof MOVER_URL !== "undefined"
+            ? MOVER_URL.replace("/0/", `/${taskId}/`)
+            : `/v2/tasks/${taskId}/column`;
+        const res = await fetch(url, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",

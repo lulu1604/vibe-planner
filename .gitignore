@@ -27,3 +27,6 @@ _scratch/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Git Bash en Windows crea un archivo llamado NUL con "2>NUL" en vez de descartar.
+NUL

@@ -22,6 +22,7 @@ Cambiar cualquiera de estas firmas obliga a AVISAR AL GRUPO antes de hacerlo.
 from datetime import date, datetime, timedelta, timezone
 
 import database
+import fechas
 import repo_events
 import repo_habits
 
@@ -34,7 +35,15 @@ VENTANA_RACHA = 400
 # Nombres de tabla para el PRAGMA. Son constantes del módulo A PROPÓSITO: el
 # PRAGMA no acepta parámetros con ?, así que el nombre se interpola, y lo único
 # seguro es que nunca venga de una petición.
-TABLA_TAREAS = "tasks"
+#
+# `tasks_v2`, NO `tasks`. La tabla `tasks` es la de la v1: no tiene `user_id` y
+# nunca lo va a tener, porque el Módulo B no la migró — creó una tabla nueva.
+# Mientras esto apuntó a `tasks`, la guarda `if "user_id" in _columnas(...)`
+# fallaba siempre y /metricas mostraba "el módulo de actividades aún no está
+# conectado" con 0 tareas aunque el usuario tuviera diez. US14 y US15 estaban
+# muertas y ningún test lo veía, porque el test se auto-omitía con esa MISMA
+# condición.
+TABLA_TAREAS = "tasks_v2"
 
 # Orden fijo de las secciones. Una pantalla que reordena sus bloques en cada
 # recarga se siente rota, aunque los números sean correctos.
@@ -43,20 +52,12 @@ SECCIONES_PREFERENTES = ("Trabajo", "Personal", "Actividades")
 
 def hoy_iso():
     """
-    La fecha de hoy en America/Lima, en ISO YYYY-MM-DD.
+    Hoy en Lima, ISO. Delega en fechas.py, la fuente unica.
 
-    No es `date.today()`: PythonAnywhere corre en UTC y a partir de las 19:00
-    hora de Lima ya es "mañana" para el servidor. Sin esto, la racha de un
-    usuario se rompería sola cada tarde.
+    Tenia su propia copia del try/except de ZoneInfo, igual que scoring.py.
+    La firma no cambia: las llamadas de habits.py siguen funcionando.
     """
-    try:
-        from zoneinfo import ZoneInfo
-        ahora = datetime.now(ZoneInfo("America/Lima"))
-    except Exception:
-        # Algunos Windows no traen la base de datos de zonas horarias. Lima no
-        # aplica horario de verano, así que el offset fijo es exacto.
-        ahora = datetime.now(timezone(timedelta(hours=-5)))
-    return ahora.date().isoformat()
+    return fechas.hoy_iso()
 
 
 def _porcentaje(parte, total):
@@ -143,30 +144,30 @@ def _resumen_tareas(user_id, date_iso):
     """
     Las tareas del día agrupadas por categoría.
 
-    Devuelve (secciones, totales, conectadas). Si `tasks` todavía no tiene
-    `user_id` -- el Módulo B aún no la ha migrado -- devuelve todo en cero con
-    conectadas=False, para que la pantalla diga "no está conectado" en vez de
-    enseñar un 0 % que parece un dato real.
+    Devuelve (secciones, totales, conectadas). El tercer valor se conserva por
+    compatibilidad con la plantilla, pero desde que el Módulo B está integrado
+    es siempre True: la tabla existe y tiene las columnas.
+
+    El `kanban_column != 'backlog'` no es un capricho: es la MISMA regla que
+    aplica repo_tasks.daily_progress(), que es lo que pinta /planner. Sin ella,
+    las dos pantallas mostrarían porcentajes distintos del mismo día y ninguna
+    de las dos parecería fiable.
     """
-    columnas = _columnas(TABLA_TAREAS)
-    if "user_id" not in columnas:
-        return {}, {"completadas": 0, "total": 0, "porcentaje": 0.0}, False
-
-    # Una tarea cuenta como completada por su estado o, si el Módulo B ya
-    # añadió el Kanban, por estar en la columna final.
-    if "kanban_column" in columnas:
-        completada = "(status = 'completed' OR kanban_column = 'done')"
-    else:
-        completada = "(status = 'completed')"
-
+    # Sin guarda condicional: `tasks_v2` SIEMPRE trae `user_id` y
+    # `kanban_column`, porque las crea schema_v2.sql. La guarda que había aquí
+    # era una rama muerta al 100 %, y una rama muerta que devuelve ceros es
+    # justo lo que convierte un fallo en un silencio.
+    #
+    # `tasks_v2` no tiene columna `status`: el estado vive solo en
+    # `kanban_column`. Nombrar `status` aquí revienta con "no such column".
     db = database.get_db()
     filas = db.execute(
         """SELECT category AS seccion,
                   COUNT(*) AS total,
-                  SUM(CASE WHEN %s THEN 1 ELSE 0 END) AS completadas
-           FROM   tasks
-           WHERE  user_id = ? AND due_date = ?
-           GROUP  BY category""" % completada,
+                  SUM(CASE WHEN kanban_column = 'done' THEN 1 ELSE 0 END) AS completadas
+           FROM   %s
+           WHERE  user_id = ? AND due_date = ? AND kanban_column != 'backlog'
+           GROUP  BY category""" % TABLA_TAREAS,
         (user_id, date_iso),
     ).fetchall()
 
@@ -261,13 +262,16 @@ def system_metrics():
         )
     }
 
-    if "user_id" in _columnas(TABLA_TAREAS):
-        activos |= {
-            fila["user_id"]
-            for fila in db.execute(
-                "SELECT DISTINCT user_id FROM tasks WHERE due_date = ?", (hoy,)
-            )
-        }
+    # Quien tiene una tarea para hoy tambien cuenta como activo. Sin guarda
+    # condicional y contra tasks_v2: la version anterior miraba la tabla de la
+    # v1, su condicion nunca se cumplia y `usaron_hoy` salia siempre bajo.
+    activos |= {
+        fila["user_id"]
+        for fila in db.execute(
+            "SELECT DISTINCT user_id FROM %s WHERE due_date = ?" % TABLA_TAREAS,
+            (hoy,),
+        )
+    }
 
     return {
         "usuarios_total": usuarios_total,
@@ -344,30 +348,32 @@ if __name__ == "__main__":
             "Assert 4 Falló: 'habitos' no debe llevar porcentaje (TC-39)"
 
         # Assert 5: 6 de 8 tareas -> 75.0 y las secciones suman el total (TC-37)
-        if "user_id" in _columnas(TABLA_TAREAS):
-            db = database.get_db()
-            reparto = [("Trabajo", 4, 3), ("Personal", 2, 1), ("Actividades", 2, 2)]
-            for categoria, total, hechas in reparto:
-                for indice in range(total):
-                    estado = "completed" if indice < hechas else "pending"
-                    db.execute(
-                        """INSERT INTO tasks (user_id, title, category, due_date,
-                                              estimated_minutes, status)
-                           VALUES (?, ?, ?, ?, ?, ?)""",
-                        (1, "T%d" % indice, categoria, "2026-08-20", 30, estado),
-                    )
-            db.commit()
-            resumen = daily_summary(1, "2026-08-20")
-            assert resumen["tareas"]["porcentaje"] == 75.0, \
-                "Assert 5 Falló: 6 de 8 tareas deben dar 75.0 (TC-37)"
-            assert sum(s["total"] for s in resumen["secciones"].values()) == 8, \
-                "Assert 5 Falló: las secciones no suman el total de tareas (TC-37)"
-            assert list(resumen["secciones"].keys())[:3] == ["Trabajo", "Personal", "Actividades"], \
-                "Assert 5 Falló: las secciones no salen en el orden preferente"
-            tc37_corrido = True
-        else:
-            tc37_corrido = False
-            print("  Assert 5 OMITIDO: el Modulo B aun no ha anadido user_id a `tasks` (TC-37)")
+        #
+        # Este assert vivia dentro de un `if "user_id" in _columnas(...)` que
+        # NUNCA se cumplia, porque miraba la tabla `tasks` de la v1. Se
+        # auto-omitia en verde y por eso nadie vio que /metricas no contaba una
+        # sola tarea. Un test que decide solo si corre no es un test.
+        db = database.get_db()
+        reparto = [("Trabajo", 4, 3), ("Personal", 2, 1), ("Actividades", 2, 2)]
+        for categoria, total, hechas in reparto:
+            for indice in range(total):
+                columna = "done" if indice < hechas else "todo"
+                db.execute(
+                    """INSERT INTO tasks_v2 (user_id, title, category, due_date,
+                                             estimated_minutes, kanban_column)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (1, "T%d" % indice, categoria, "2026-08-20", 30, columna),
+                )
+        db.commit()
+        resumen = daily_summary(1, "2026-08-20")
+        assert resumen["tareas"]["porcentaje"] == 75.0, \
+            "Assert 5 Falló: 6 de 8 tareas deben dar 75.0 (TC-37)"
+        assert sum(s["total"] for s in resumen["secciones"].values()) == 8, \
+            "Assert 5 Falló: las secciones no suman el total de tareas (TC-37)"
+        assert list(resumen["secciones"].keys())[:3] == ["Trabajo", "Personal", "Actividades"], \
+            "Assert 5 Falló: las secciones no salen en el orden preferente"
+        assert resumen["tareas_conectadas"] is True, \
+            "Assert 5 Falló: con tasks_v2 poblada, tareas_conectadas debe ser True"
 
         # Assert 6: system_metrics() devuelve SOLO números (TC-41)
         agregados = system_metrics()
@@ -385,8 +391,4 @@ if __name__ == "__main__":
         except OSError:
             pass
 
-    if tc37_corrido:
-        print("SUCCESS: Todas las 6 pruebas de assert para metrics.py pasaron exitosamente!")
-    else:
-        print("SUCCESS: 5 de 6 pruebas de assert para metrics.py pasaron "
-              "(1 omitida: TC-37 espera a que el Modulo B migre `tasks`).")
+    print("SUCCESS: Todas las 6 pruebas de assert para metrics.py pasaron exitosamente!")
