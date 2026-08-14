@@ -4,12 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {#
-    BLOQUES CONGELADOS DE ESTA PLANTILLA -- no renombrar:
-        title  ·  acciones  ·  content  ·  extra_css
-    index.html (la v1 de Ana) extiende esta plantilla y usa `title` y
-    `content`. Renombrarlos a `titulo`/`contenido` deja la pagina EN BLANCO
-    sin ningun error: Jinja simplemente no encuentra el bloque y no rellena
-    nada. Es de los fallos mas caros de diagnosticar que hay.
+    BLOQUES CONGELADOS -- no renombrar:
+        title · encabezado · subtitulo · acciones · content · extra_css · extra_js
+    Renombrarlos a `titulo`/`contenido` deja las paginas EN BLANCO sin ningun
+    error: Jinja no encuentra el bloque y no rellena nada. Es de los fallos
+    mas caros de diagnosticar que hay, asi que van escritos aqui.
+
+    Ojo tambien: `content` se define UNA sola vez en este archivo. Definirlo
+    en dos ramas de un if es el mismo sintoma -- pagina vacia, cero errores.
   #}
   <title>{% block title %}VibePlanner{% endblock %}</title>
 
@@ -28,17 +30,26 @@
   {% if usuario_actual %}
     {% set roles_actuales = current_roles() %}
     {% include "components/_topbar.html" %}
-
     <div class="app-shell">
       {% include "components/_sidebar.html" %}
+  {% else %}
+    {# Sin sesion solo se llega aqui por una pagina de error (403/404/400).
+       Cabecera minima: no hay menu que mostrar ni cuenta que nombrar. #}
+    <header class="topbar">
+      <span class="topbar-marca">VibePlanner</span>
+      <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.login') }}"
+         style="color: var(--text-on-dark);">Entrar</a>
+    </header>
+    <div>
+  {% endif %}
 
       <main class="contenido" id="contenido-principal">
         <div class="pagina-cabecera">
           <div>
-            <h1>{% block encabezado %}{{ self.title() }}{% endblock %}</h1>
+            <h1>{% block encabezado %}VibePlanner{% endblock %}</h1>
             {% block subtitulo %}{% endblock %}
           </div>
-          {# Una sola accion primaria por pantalla vive aqui. #}
+          {# Una sola accion primaria por pantalla, y vive aqui. #}
           <div class="btn-fila">{% block acciones %}{% endblock %}</div>
         </div>
 
@@ -46,29 +57,11 @@
 
         {% block content %}{% endblock %}
       </main>
+
     </div>
 
+  {% if usuario_actual %}
     {% include "components/_bottom_nav.html" %}
-
-  {% else %}
-    {#
-      Sin sesion. Es el caso de la pantalla v1 del planner (index.html), que
-      todavia no tiene cuentas: se le da una cabecera simple en vez del shell
-      completo, para que siga funcionando exactamente igual que antes
-      mientras el Modulo B la reescribe.
-    #}
-    <header class="topbar">
-      <a class="topbar-marca" href="{{ url_for('home.index') }}">
-        <span>VibePlanner</span>
-      </a>
-      <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.login') }}"
-         style="color: var(--text-on-dark);">Entrar</a>
-    </header>
-
-    <main class="contenido" id="contenido-principal">
-      {% include "components/_flash.html" %}
-      {% block content_publico %}{{ self.content() }}{% endblock %}
-    </main>
   {% endif %}
 
   <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>

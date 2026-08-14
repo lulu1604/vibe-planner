@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% from "admin/_modal_roles.html" import modales_usuario %}
+{# `with context` NO es opcional: sin el, los macros importados no ven ni
+   csrf_token() ni REGLAS -- Jinja los importa en un espacio aislado -- y el
+   modal revienta con "'csrf_token' is undefined". #}
+{% from "admin/_modal_roles.html" import modales_usuario with context %}
 
 {% block title %}Gestion de usuarios · VibePlanner{% endblock %}
 {% block encabezado %}Gestion de usuarios{% endblock %}
