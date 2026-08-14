@@ -43,7 +43,10 @@
     <div>
   {% endif %}
 
-      <main class="contenido" id="contenido-principal">
+      {# Las pantallas que son una CUADRICULA -- calendario, tablero, metricas --
+         declaran `{% block ancho %}contenido--ancho{% endblock %}` para saltarse
+         el limite de 75 caracteres por linea, que solo tiene sentido en texto. #}
+      <main class="contenido {% block ancho %}{% endblock %}" id="contenido-principal">
         <div class="pagina-cabecera">
           <div>
             <h1>{% block encabezado %}VibePlanner{% endblock %}</h1>

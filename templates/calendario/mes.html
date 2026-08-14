@@ -13,6 +13,9 @@
   vea igual que el resto de pantallas.
 #}
 
+{# Cuadricula, no texto: usa el ancho completo. #}
+{% block ancho %}contenido--ancho{% endblock %}
+
 {% block title %}Calendario · {{ month_name }} {{ year }}{% endblock %}
 {% block encabezado %}{{ month_name }} {{ year }}{% endblock %}
 

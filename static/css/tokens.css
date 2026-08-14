@@ -124,7 +124,15 @@
   --sidebar-width:           240px;
   --sidebar-width-collapsed:  68px;
   --bottom-nav-height:        64px;
+  /* Ancho de lectura: ~75 caracteres por linea. Vale para formularios,
+     perfiles y texto -- leer lineas de 1.600 px cansa la vista. */
   --content-max:            1200px;
+  /* Ancho de TRABAJO, para pantallas que son una cuadricula y no un texto:
+     calendario, tablero y metricas. Ahi el limite de 75 caracteres no aplica
+     -- no hay parrafos -- y capar a 1200 px deja media pantalla vacia mientras
+     las celdas se aprietan. Se acota a 1.800 px para que en un monitor
+     ultrapanoramico las columnas no queden absurdamente separadas. */
+  --content-max-ancho:      1800px;
   --touch-min:                44px;   /* objetivo tactil minimo */
 }
 

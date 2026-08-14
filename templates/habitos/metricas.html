@@ -9,6 +9,9 @@
   es el `width` de las barras, que es una propiedad de presentacion: los
   porcentajes ya vienen resueltos desde metrics.daily_summary().
 #}
+{# Cuadricula, no texto: usa el ancho completo. #}
+{% block ancho %}contenido--ancho{% endblock %}
+
 {% block title %}Métricas — VibePlanner{% endblock %}
 {% block encabezado %}Cómo me fue{% endblock %}
 {% block subtitulo %}

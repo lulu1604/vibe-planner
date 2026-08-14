@@ -244,6 +244,21 @@ a:hover { color: var(--navy); }
     margin-inline: auto;
     padding: var(--space-8);
   }
+
+  /* Las pantallas que son una CUADRICULA, no un texto: calendario, tablero y
+     metricas. El limite de 75 caracteres no les aplica, y con el puesto se
+     veian celdas de 68 px con media pantalla en blanco a los lados. */
+  .contenido--ancho {
+    max-width: var(--content-max-ancho);
+    padding-inline: var(--space-6);
+  }
+}
+
+/* En monitores anchos el sidebar se ensancha un poco: cabe la etiqueta
+   completa sin recortar y la proporcion con el contenido se mantiene. */
+@media (min-width: 1600px) {
+  .app-shell { grid-template-columns: 280px 1fr; }
+  .contenido { padding: var(--space-8) var(--space-12); }
 }
 
 /* =====================================================================
