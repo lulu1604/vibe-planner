@@ -523,6 +523,29 @@ def main():
     comprobar(f"        los {len(usados)} permisos de @requires estan sembrados",
               not huerfanos, huerfanos)
 
+    # --- Todo url_for() de toda plantilla apunta a un endpoint real ------
+    #
+    # Un url_for a un endpoint inexistente NO falla al arrancar: falla con
+    # BuildError el dia que alguien abre esa pantalla, y el mensaje no dice de
+    # que plantilla vino. Ya paso dos veces en este proyecto: home.py apuntaba
+    # a `calendario.mes` (el menu salia "Proximamente") y templates/index.html
+    # quedo llamando a `add_task_route` despues de retirar las rutas v1.
+    endpoints_reales = set(app.view_functions)
+    rotos = []
+    raiz_plantillas = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+    for carpeta, _, archivos in os.walk(raiz_plantillas):
+        for archivo in archivos:
+            if not archivo.endswith(".html"):
+                continue
+            ruta_plantilla = os.path.join(carpeta, archivo)
+            with open(ruta_plantilla, "r", encoding="utf-8") as f:
+                for endpoint in re.findall(r"url_for\(\s*['\"]([^'\"]+)['\"]", f.read()):
+                    if endpoint not in endpoints_reales and endpoint != "static":
+                        rotos.append(f"{archivo} -> {endpoint}")
+
+    comprobar("        todo url_for() de las plantillas apunta a un endpoint real",
+              not rotos, rotos)
+
     # --- Las FK se respetan de verdad ------------------------------------
     with app.app_context():
         db = database.raw_connection()

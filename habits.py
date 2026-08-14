@@ -209,6 +209,18 @@ def registrar(habit_id):
         flash("El valor del día debe ser un número. Por ejemplo: 8.", "error")
         return redirect(url_for("habitos.lista"))
 
+    # El rango se valida igual que la meta en repo_habits._validar. Sin esto,
+    # `value=-5` o `value=999999` entraban tal cual: la tira de la semana y las
+    # métricas mostrarían un número imposible que el usuario no puede corregir
+    # desde ninguna pantalla.
+    if valor < 0 or valor > repo_habits.META_MAXIMA:
+        flash(
+            "El valor del día debe estar entre 0 y %d. Revisa la unidad: "
+            "quizá querías minutos y no horas." % repo_habits.META_MAXIMA,
+            "error",
+        )
+        return redirect(url_for("habitos.lista"))
+
     # Corregir el valor de hoy actualiza la fila existente gracias al UNIQUE
     # (habit_id, log_date): nunca crea una segunda (TC-34).
     repo_habits.upsert_log(habit_id, hoy, valor, marcar)

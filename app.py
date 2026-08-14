@@ -140,70 +140,66 @@ def _validar_formulario_tarea(form):
     }, []
 
 
-def _volver_al_inicio():
-    disponible = request.form.get("available", type=int)
-    if disponible is None:
-        return redirect(url_for("index_route"))
-    return redirect(url_for("index_route", available=max(0, min(disponible, MAX_MINUTES))))
+# ======================================================================
+# RUTAS v1 RETIRADAS  (auditoria de integracion, 2026-08-14)
+# ----------------------------------------------------------------------
+# Aqui vivian las cinco rutas heredadas de la v1:
+#
+#     GET  /                                 -> index.html con TODAS las tareas
+#     POST /tasks                            -> crear
+#     POST /tasks/<id>/delete                -> eliminar
+#     POST /tasks/<id>/status                -> cambiar estado
+#     GET  /api/task/<id>/score-breakdown    -> desglose del puntaje
+#
+# Se retiran por DOS razones, no una:
+#
+# 1. SEGURIDAD. Ninguna llevaba @login_required ni @requires. Cualquiera sin
+#    sesion podia leer las tareas de todo el mundo en `GET /`, crear tareas y
+#    BORRARLAS (verificado: HTTP 302 y la fila desaparecio). Ademas
+#    `database.get_daily_progress()` cuenta las tareas de TODA la base, asi que
+#    la barra de progreso mezclaba el trabajo de desconocidos. Con `tasks` sin
+#    columna `user_id`, esto no se puede arreglar poniendo un decorador: no hay
+#    forma de saber de quien es cada fila. Rompia TC-08 y TC-11, los dos casos
+#    criticos que bloquean el release.
+#
+# 2. COLISION CON EL MODULO B. `/tasks` y `/api/task/<id>/score-breakdown` son
+#    exactamente los endpoints que trae el blueprint de Lucero. Al registrarse,
+#    Flask conserva la primera regla que coincide y la suya quedaria muerta sin
+#    un solo error en consola: un dia entero de depuracion.
+#
+# `templates/index.html`, `static/js/main.js` y las funciones v1 de
+# `database.py` (get_tasks, add_task, update_status, delete_task,
+# get_daily_progress) quedan sin usar. NO se borran todavia: son la referencia
+# de la que parte Lucero. Se retiran cuando el Modulo B entre a main.
 
 
 @app.route("/")
 def index_route():
-    available = _leer_minutos_disponibles()
-    tasks = database.get_tasks()
-    ranked = scoring.rank_tasks(tasks, available)
-    progress = database.get_daily_progress()
-    return render_template(
-        "index.html",
-        tasks=ranked,
-        available_minutes=available,
-        progress=progress,
-    )
-
-
-@app.route("/tasks", methods=["POST"])
-def add_task_route():
-    datos, errores = _validar_formulario_tarea(request.form)
-
-    if errores:
-        for mensaje in errores:
-            flash(mensaje, "error")
-        return _volver_al_inicio()
-
-    database.add_task(datos)
-    flash("Actividad agregada.", "ok")
-    return _volver_al_inicio()
-
-
-@app.route("/tasks/<int:task_id>/delete", methods=["POST"])
-def delete_task_route(task_id):
-    if database.delete_task(task_id):
-        flash("Actividad eliminada.", "ok")
-    else:
-        flash("Esa actividad ya no existe. Actualiza la página.", "error")
-    return _volver_al_inicio()
-
-
-@app.route("/tasks/<int:task_id>/status", methods=["POST"])
-def update_status_route(task_id):
-    new_status = request.form.get("status", "pending")
-    if not database.update_status(task_id, new_status):
-        flash("No se pudo cambiar el estado. Vuelve a intentarlo.", "error")
-    return _volver_al_inicio()
-
-
-@app.route("/api/task/<int:task_id>/score-breakdown")
-def score_breakdown_route(task_id):
-    available = _leer_minutos_disponibles()
-    task = database.get_task_by_id(task_id)
-    if task is None:
-        return jsonify({"error": "not found"}), 404
-    total, breakdown = scoring.calculate_score(task, available)
-    return jsonify({"id": task_id, "total": total, "breakdown": breakdown})
+    """La portada es el home del Modulo A, que si comprueba la sesion."""
+    return redirect(url_for("home.index"))
 
 
 def _correr_pruebas():
+    """
+    Los 11 asserts de Ana, reorientados tras retirar las rutas v1.
+
+    Antes atacaban `POST /tasks` y `/api/task/<id>/score-breakdown`. Al retirar
+    esas cinco rutas (ver el bloque de arriba) la suite quedo apuntando a
+    endpoints que ya no existen y fallaba entera desde el primer assert.
+
+    Se reorientan a la capa que SI sobrevive y que es justo la que hereda
+    Lucero en el Modulo B: `_validar_formulario_tarea()`, las funciones v1 de
+    `database.py` y la forma del desglose de `scoring.py`. Cada assert sigue
+    comprobando exactamente la misma regla de negocio que comprobaba; lo unico
+    que cambia es que se verifica un nivel mas abajo, sin pasar por HTTP.
+
+    Cuando el Modulo B publique su blueprint con `/planner` y su propio
+    endpoint de desglose, estos asserts deberian volver a subir a nivel HTTP
+    contra las rutas nuevas.
+    """
     import tempfile
+
+    from werkzeug.datastructures import MultiDict
 
     fd, ruta_tmp = tempfile.mkstemp(suffix=".db")
     os.close(fd)
@@ -211,76 +207,81 @@ def _correr_pruebas():
     database.init_db()
 
     app.config["TESTING"] = True
-    cliente = app.test_client()
 
-    # TODO POST lleva token CSRF: la lista de exenciones de security.py esta
-    # vacia y asi debe quedarse. Se planta en la sesion del cliente de pruebas
-    # y se anade al formulario base, que es exactamente lo que hace el
-    # navegador con el <input type="hidden" name="_csrf"> de las plantillas.
-    # Los 11 asserts siguen probando lo mismo que probaban.
-    CSRF = "token-de-prueba"
-    with cliente.session_transaction() as sesion:
-        sesion["_csrf"] = CSRF
+    base = {"title": "Tarea valida", "due_date": "2026-08-20",
+            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45"}
+
+    def validar(**cambios):
+        """
+        Devuelve (datos, errores) tal cual los devolvia la ruta.
+
+        MultiDict y no un dict normal: `_validar_formulario_tarea` usa
+        `form.get("...", type=int)`, que es de Werkzeug. Con un dict pelado
+        revienta con TypeError y estariamos probando otra cosa.
+        """
+        datos = dict(base)
+        datos.update(cambios)
+        return _validar_formulario_tarea(MultiDict(datos))
 
     def total_tareas():
         with app.app_context():
             return len(database.get_tasks())
 
-    base = {"title": "Tarea valida", "due_date": "2026-08-20",
-            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45",
-            "_csrf": CSRF}
-
-    def enviar(**cambios):
-        datos = dict(base)
-        datos.update(cambios)
-        return cliente.post("/tasks", data=datos)
-
+    # --- 1. La tarea valida pasa la validacion Y llega a la base ---------
+    datos, errores = validar()
+    assert not errores, f"Assert 1 Falló: una tarea válida fue rechazada -> {errores}"
     antes = total_tareas()
-    r = enviar()
-    assert r.status_code == 302, "Assert 1 Falló: la tarea válida no redirigió"
+    with app.app_context():
+        database.add_task(datos)
     assert total_tareas() == antes + 1, "Assert 1 Falló: la tarea válida no se insertó"
 
-    antes = total_tareas()
-    enviar(title="   ")
-    assert total_tareas() == antes, "Assert 2 Falló: se insertó una tarea sin título"
+    # --- 2-8. Cada entrada invalida se rechaza CON MENSAJE ---------------
+    # Se comprueba tambien que el mensaje exista: un rechazo silencioso deja al
+    # usuario sin saber que arreglar, que es el defecto que Ana venia a cerrar.
+    casos = [
+        (2, {"title": "   "},             "sin título"),
+        (3, {"due_date": "2026-02-31"},   "el 31 de febrero"),
+        (4, {"due_date": "20-08-2026"},   "una fecha DD-MM-AAAA"),
+        (5, {"estimated_minutes": "0"},   "una duración de 0 minutos"),
+        (6, {"estimated_minutes": "-30"}, "una duración negativa"),
+        (7, {"estimated_minutes": "abc"}, "una duración no numérica"),
+        (8, {"priority_level": "99"},     "una prioridad inválida"),
+    ]
+    for numero, cambio, descripcion in casos:
+        antes = total_tareas()
+        datos, errores = validar(**cambio)
+        assert errores, f"Assert {numero} Falló: se aceptó {descripcion}"
+        assert datos is None, f"Assert {numero} Falló: devolvió datos pese al error"
+        assert total_tareas() == antes, \
+            f"Assert {numero} Falló: se insertó una tarea con {descripcion}"
 
-    antes = total_tareas()
-    enviar(due_date="2026-02-31")
-    assert total_tareas() == antes, "Assert 3 Falló: se aceptó el 31 de febrero"
-
-    antes = total_tareas()
-    enviar(due_date="20-08-2026")
-    assert total_tareas() == antes, "Assert 4 Falló: se aceptó una fecha DD-MM-AAAA"
-
-    antes = total_tareas()
-    enviar(estimated_minutes="0")
-    assert total_tareas() == antes, "Assert 5 Falló: se aceptó una duración de 0 minutos"
-
-    antes = total_tareas()
-    enviar(estimated_minutes="-30")
-    assert total_tareas() == antes, "Assert 6 Falló: se aceptó una duración negativa"
-
-    antes = total_tareas()
-    enviar(estimated_minutes="abc")
-    assert total_tareas() == antes, "Assert 7 Falló: se aceptó una duración no numérica"
-
-    antes = total_tareas()
-    enviar(priority_level="99")
-    assert total_tareas() == antes, "Assert 8 Falló: se aceptó una prioridad inválida"
-
+    # --- 9. La FORMA del desglose no cambia -----------------------------
+    # Es el contrato que consume main.js y que el Modulo B tiene que respetar:
+    # tres componentes, cada uno con `puntos` y `razon`.
     with app.app_context():
         primera = database.get_tasks()[0]
-    r = cliente.get(f"/api/task/{primera['id']}/score-breakdown?available=120")
-    assert r.status_code == 200, "Assert 9 Falló: el endpoint de desglose no respondió 200"
-    payload = r.get_json()
-    assert set(payload.keys()) == {"id", "total", "breakdown"}, \
-        f"Assert 9 Falló: el JSON cambió de forma y rompe main.js -> {list(payload.keys())}"
+    total, desglose = scoring.calculate_score(dict(primera), 120)
+    assert isinstance(total, int), "Assert 9 Falló: el puntaje total no es un entero"
+    assert set(desglose.keys()) == {"prioridad", "urgencia", "tiempo"}, \
+        f"Assert 9 Falló: el desglose cambió de forma y rompe main.js -> {list(desglose.keys())}"
+    for clave, parte in desglose.items():
+        assert set(parte.keys()) == {"puntos", "razon"}, \
+            f"Assert 9 Falló: el componente «{clave}» cambió de forma -> {list(parte.keys())}"
+    assert total == sum(p["puntos"] for p in desglose.values()), \
+        "Assert 9 Falló: la suma del desglose no coincide con el total (TC-15)"
 
-    r = cliente.get("/api/task/999999/score-breakdown")
-    assert r.status_code == 404, "Assert 10 Falló: un id inexistente no devolvió 404"
+    # --- 10. Un id inexistente no existe --------------------------------
+    with app.app_context():
+        assert database.get_task_by_id(999999) is None, \
+            "Assert 10 Falló: un id inexistente devolvió una tarea"
 
-    assert cliente.get("/?available=abc").status_code == 200, \
-        "Assert 11 Falló: un parámetro available inválido rompió el dashboard"
+    # --- 11. Un `available` basura no revienta, se acota ------------------
+    with app.test_request_context("/?available=abc"):
+        assert _leer_minutos_disponibles() == DEFAULT_AVAILABLE_MINUTES, \
+            "Assert 11 Falló: un parámetro available inválido no cayó al valor por defecto"
+    with app.test_request_context("/?available=999999"):
+        assert _leer_minutos_disponibles() == MAX_MINUTES, \
+            "Assert 11 Falló: un available enorme no se acotó a 24 h"
 
     os.remove(ruta_tmp)
     print("SUCCESS: Todas las 11 pruebas de assert para app.py pasaron exitosamente!")

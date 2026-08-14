@@ -23,6 +23,7 @@ from flask import (Blueprint, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
 
 import config
+import fechas
 import repo_events
 import security
 
@@ -30,10 +31,18 @@ calendar_bp = Blueprint("calendar_bp", __name__)
 
 ALLOWED_COLORS = getattr(config, "ALLOWED_COLORS", ("#2F4156", "#567C8D", "#C8D9E6", "#D7707F", "#9DA3A4", "#4C4D53"))
 
+# Lista blanca de estados. Tiene que coincidir con el CHECK de `events` en
+# schema_v2.sql: si un valor de fuera llega al UPDATE, SQLite lanza
+# IntegrityError y el usuario ve un 500 en vez de un mensaje.
+ALLOWED_STATUS = ("tentativo", "confirmado", "cancelado")
+DEFAULT_STATUS = "confirmado"
+
 
 def _current_local_year_month():
-    now = datetime.now()
-    return now.year, now.month
+    # Hora de LIMA, no del servidor: PythonAnywhere corre en UTC y a partir de
+    # las 19:00 hora local ya es "manana" para el. El 31 a las 19:01 este
+    # calendario abria directamente en el mes siguiente.
+    return fechas.anio_mes_local()
 
 
 @calendar_bp.route("/calendario")
@@ -94,8 +103,9 @@ def month_view(year, month):
         events_by_date=events_by_date,
         allowed_colors=ALLOWED_COLORS,
         # Para marcar la celda de hoy. Se calcula aqui y no en la plantilla:
-        # cero logica de negocio dentro de {{ }}.
-        hoy=datetime.now().strftime("%Y-%m-%d"),
+        # cero logica de negocio dentro de {{ }}. En hora de Lima, o despues de
+        # las 19:00 se resaltaria la celda de manana.
+        hoy=fechas.hoy_iso(),
         seccion_activa="calendario",
     )
 
@@ -148,7 +158,7 @@ def create_event():
         month = int(start_date.split("-")[1])
         return redirect(url_for("calendar_bp.month_view", year=year, month=month))
 
-    default_date = request.args.get("date", datetime.now().strftime("%Y-%m-%d"))
+    default_date = request.args.get("date", fechas.hoy_iso())
     return render_template("calendario/evento_form.html", allowed_colors=ALLOWED_COLORS, default_date=default_date)
 
 
@@ -172,12 +182,31 @@ def edit_event(event_id):
         start_at = f"{start_date} {start_time}"
         end_at = f"{end_date} {end_time}"
 
+        # Las MISMAS validaciones que /eventos/nuevo. Cuando solo valida el alta,
+        # basta con editar un evento para dejarlo sin titulo: invisible en la
+        # cuadricula y sin forma de recuperarlo desde la interfaz.
+        errores = []
+        if not title:
+            errores.append("El titulo del evento es obligatorio.")
+        if not start_date or not end_date:
+            errores.append("Debes especificar las fechas de inicio y fin.")
         if end_at <= start_at:
-            flash("La hora de fin debe ser posterior a la de inicio.", "error")
+            errores.append("La hora de fin debe ser posterior a la de inicio.")
+
+        if errores:
+            for err in errores:
+                flash(err, "error")
             return render_template("calendario/evento_form.html", event=event, allowed_colors=ALLOWED_COLORS)
 
         if color not in ALLOWED_COLORS:
             color = "#567C8D"
+
+        # `status` llega del formulario y va directo a una columna con CHECK.
+        # Sin esta lista blanca, un valor cualquiera revienta en IntegrityError
+        # y el usuario ve un 500. El color ya se filtraba; el estado no.
+        status = request.form.get("status", DEFAULT_STATUS)
+        if status not in ALLOWED_STATUS:
+            status = DEFAULT_STATUS
 
         data = {
             "title": title,
@@ -185,7 +214,7 @@ def edit_event(event_id):
             "start_at": start_at,
             "end_at": end_at,
             "color": color,
-            "status": request.form.get("status", "confirmado")
+            "status": status,
         }
         repo_events.update_owned(event_id, user_id, data)
         flash("Evento actualizado.", "ok")
@@ -200,10 +229,15 @@ def edit_event(event_id):
 @security.requires("evento.eliminar")
 def delete_event(event_id):
     user_id = security.current_user_id()
-    if repo_events.delete_owned(event_id, user_id):
-        flash("Evento eliminado.", "ok")
-    else:
-        flash("No se pudo eliminar el evento.", "error")
+
+    # Misma regla que editar e invitar: si no es tuyo, 404. Antes esta ruta
+    # respondia 302 con un flash, asi que un evento ajeno y un evento
+    # inexistente se distinguian del propio por el comportamiento.
+    if repo_events.get_owned(event_id, user_id) is None:
+        abort(404)
+
+    repo_events.delete_owned(event_id, user_id)
+    flash("Evento eliminado.", "ok")
     year, month = _current_local_year_month()
     return redirect(url_for("calendar_bp.month_view", year=year, month=month))
 
