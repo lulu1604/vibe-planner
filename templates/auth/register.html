@@ -1,0 +1,42 @@
+{% extends "base_auth.html" %}
+{% from "components/_field.html" import campo %}
+
+{% block title %}Crear cuenta · VibePlanner{% endblock %}
+
+{% block content %}
+  <h1 class="card-titulo">Crear cuenta</h1>
+
+  {% if ofrecer_login %}
+    <div class="alert alert--error" role="alert" style="margin-bottom: var(--space-6);">
+      <span>
+        Ese usuario o correo ya esta registrado.
+        <a href="{{ url_for('auth.login') }}">Quieres iniciar sesion?</a>
+      </span>
+    </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.register') }}" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    {{ campo("username", REGLAS.username, datos, errores, autofocus=true) }}
+    {{ campo("email", REGLAS.email, datos, errores, tipo="email") }}
+    {{ campo("full_name", REGLAS.full_name, datos, errores, requerido=false) }}
+    {{ campo("password", REGLAS.password, datos, errores, tipo="password") }}
+
+    {#
+      NO hay campo de roles en esta pantalla, y no es un olvido.
+      Toda cuenta creada aqui nace con el rol `usuario` y solo con ese: la
+      lista la fija auth.PUBLIC_REGISTRATION_ROLES en el servidor. Anadir
+      `roles=admin` con DevTools o con curl no otorga nada, porque este
+      formulario no se lee para decidir roles (TC-03).
+    #}
+
+    <button class="btn btn--primary btn--bloque" type="submit" data-enviando="Creando la cuenta...">
+      Crear cuenta
+    </button>
+  </form>
+{% endblock %}
+
+{% block pie %}
+  Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Entrar</a>
+{% endblock %}

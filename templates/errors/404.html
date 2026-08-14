@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}No encontrado · VibePlanner{% endblock %}
+{% block encabezado %}No encontramos esa pagina{% endblock %}
+
+{% block content %}
+  {#
+    Ojo: esta pantalla tambien sale cuando alguien pide un registro que EXISTE
+    pero no es suyo. Es deliberado. Un 403 ahi confirmaria que ese id existe y
+    permitiria recorrer los datos de los demas preguntando uno por uno.
+    Para quien pregunta, lo que no es suyo simplemente no existe.
+  #}
+  <div class="card">
+    <p style="margin-bottom:var(--space-4);">
+      Puede que el enlace este mal escrito, o que eso que buscas ya no exista.
+    </p>
+    <div class="btn-fila">
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
+    </div>
+  </div>
+{% endblock %}

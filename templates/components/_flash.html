@@ -1,0 +1,24 @@
+{#
+  Mensajes flash.
+  --------------------------------------------------------------------------
+  Hasta la v2 esto no existia: app.py llamaba a flash() en seis sitios y
+  ninguna plantilla llamaba a get_flashed_messages(), asi que todos los
+  mensajes de error de la aplicacion eran invisibles. El bloque lo dejo
+  escrito Ana en docs/para_piero_mensajes.md y aqui queda integrado.
+
+  `role="status"` + `aria-live="polite"` hacen que un lector de pantalla
+  anuncie el mensaje al aparecer sin interrumpir lo que estuviera leyendo.
+#}
+{% with mensajes = get_flashed_messages(with_categories=true) %}
+  {% if mensajes %}
+    <div class="alert-zona" role="status" aria-live="polite">
+      {% for categoria, mensaje in mensajes %}
+        {# Las categorias que usa el proyecto son 'ok', 'error' e 'info'.
+           Cualquier otra cae en 'info' en vez de quedarse sin estilo. #}
+        <div class="alert alert--{{ categoria if categoria in ('ok', 'error', 'info') else 'info' }}">
+          <span>{{ mensaje }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

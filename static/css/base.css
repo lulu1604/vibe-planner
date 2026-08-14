@@ -1,0 +1,281 @@
+/* =====================================================================
+   VibePlanner v2 - base.css
+   Reset, tipografia y layout responsive del shell.
+   Se carga DESPUES de tokens.css y ANTES de components.css.
+
+   MOBILE-FIRST SIN EXCEPCIONES: lo que hay fuera de un @media es el movil,
+   y los `min-width` van anadiendo. Al reves siempre termina en un movil
+   lleno de parches.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   Fuentes auto-alojadas. Sin CDN: la demo tiene que funcionar aunque el
+   aula se quede sin internet, y PythonAnywhere free no tiene red saliente.
+   Si los .woff2 aun no estan en static/fonts/, `font-display: swap` y la
+   pila de respaldo de --font-ui hacen que no se note nada roto.
+   --------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/Inter-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+/* ---------------------------------------------------------------------
+   Reset
+   --------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text-body);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, p, figure, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+img, svg { max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ---------------------------------------------------------------------
+   Tipografia
+   La jerarquia la hacen el tamano y el peso, no el color. Si todo esta en
+   negrita, nada destaca.
+   --------------------------------------------------------------------- */
+h1 { font-size: var(--text-2xl); line-height: 1.2;  color: var(--text-strong); font-weight: 700; }
+h2 { font-size: var(--text-xl);  line-height: 1.3;  color: var(--text-strong); font-weight: 650; }
+h3 { font-size: var(--text-lg);  line-height: 1.5;  color: var(--text-strong); font-weight: 600; }
+
+.text-muted { color: var(--text-muted); font-size: var(--text-sm); }
+.text-data  { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+a { color: var(--teal-700); text-underline-offset: 2px; }
+a:hover { color: var(--navy); }
+
+/* Foco visible SIEMPRE. Un `outline: none` sin sustituto deja la aplicacion
+   inutilizable para quien navega con teclado. */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Salto al contenido: primer tabulador de la pagina, invisible hasta que
+   se enfoca. Evita recorrer los 6 enlaces del menu en cada pantalla. */
+.skip-link {
+  position: absolute; left: var(--space-4); top: -100%;
+  z-index: 100; padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface); color: var(--text-strong);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
+}
+.skip-link:focus { top: var(--space-4); }
+
+/* Visible solo para lectores de pantalla. */
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* =====================================================================
+   SHELL DE LA APLICACION
+   Movil: contenido a una columna + barra inferior fija.
+   ===================================================================== */
+.app-shell {
+  display: block;
+  min-height: 100vh;
+  padding-bottom: var(--bottom-nav-height);
+}
+
+.contenido {
+  padding: var(--space-4);
+}
+
+.pagina-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.pagina-cabecera p { color: var(--text-muted); font-size: var(--text-sm); }
+
+/* ---------------------------------------------------------------------
+   Barra superior
+   --------------------------------------------------------------------- */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-sidebar);
+  color: var(--text-on-dark);
+  box-shadow: var(--shadow-sm);
+}
+.topbar a { color: var(--text-on-dark); text-decoration: none; }
+.topbar :focus-visible { outline-color: var(--focus-ring-on-dark); }
+
+.topbar-marca {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-weight: 700; font-size: var(--text-lg);
+}
+
+/* H1: quien mira la pantalla sabe con que cuenta entro sin tener que adivinar. */
+.topbar-usuario {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.topbar-usuario .usuario-nombre { font-weight: 600; }
+
+/* ---------------------------------------------------------------------
+   Barra lateral (oculta en movil)
+   --------------------------------------------------------------------- */
+.sidebar { display: none; }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: var(--space-1); }
+
+.sidebar-enlace {
+  position: relative;
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-on-dark);
+  text-decoration: none;
+  transition: background var(--transition);
+}
+.sidebar-enlace:hover { background: rgba(255, 255, 255, .08); color: var(--text-on-dark); }
+.sidebar-enlace:focus-visible { outline-color: var(--focus-ring-on-dark); }
+
+/* Seccion activa: fondo + texto + barra de 3 px. Tres senales, no solo el
+   color, porque en escala de grises el color solo no se distingue. */
+.sidebar-enlace[aria-current="page"] {
+  background: var(--bg-subtle);
+  color: var(--navy);
+  font-weight: 600;
+}
+.sidebar-enlace[aria-current="page"]::before {
+  content: ""; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; border-radius: var(--radius-pill); background: var(--navy);
+}
+
+/* Modulo que aun no existe: se ve, no se pulsa, y dice por que. */
+.sidebar-enlace[aria-disabled="true"] {
+  opacity: .45; pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------
+   Barra inferior (solo movil)
+   --------------------------------------------------------------------- */
+.bottom-nav {
+  position: fixed; inset: auto 0 0 0; z-index: 30;
+  display: flex; align-items: stretch;
+  height: var(--bottom-nav-height);
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--navy);
+}
+.bottom-nav a {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  min-width: var(--touch-min);
+  color: var(--text-on-dark);
+  font-size: var(--text-xs);
+  text-decoration: none;
+}
+.bottom-nav a:focus-visible { outline-color: var(--focus-ring-on-dark); }
+.bottom-nav a[aria-current="page"] {
+  color: var(--sky); font-weight: 600;
+  box-shadow: inset 0 3px 0 var(--sky);
+}
+
+/* =====================================================================
+   TABLET  >= 600 px : aparece la barra lateral, solo iconos
+   ===================================================================== */
+@media (min-width: 600px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+    padding-bottom: 0;
+  }
+
+  .sidebar {
+    display: flex; flex-direction: column; gap: var(--space-6);
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    padding: var(--space-4) var(--space-2);
+    background: var(--bg-sidebar);
+  }
+
+  .sidebar .nav-etiqueta { display: none; }
+  .sidebar-enlace { justify-content: center; }
+
+  .bottom-nav { display: none; }
+  .contenido  { padding: var(--space-6); }
+}
+
+/* =====================================================================
+   ESCRITORIO  >= 1024 px : barra lateral etiquetada, contenido acotado
+   ===================================================================== */
+@media (min-width: 1024px) {
+  .app-shell { grid-template-columns: var(--sidebar-width) 1fr; }
+
+  .sidebar { padding: var(--space-6) var(--space-3); }
+  .sidebar .nav-etiqueta { display: inline; }
+  .sidebar-enlace { justify-content: flex-start; }
+
+  /* Maximo ~75 caracteres por linea: por eso el contenido se acota aunque
+     la pantalla sea mas ancha. */
+  .contenido {
+    max-width: var(--content-max);
+    margin-inline: auto;
+    padding: var(--space-8);
+  }
+}
+
+/* =====================================================================
+   SHELL DE AUTENTICACION - login y registro
+   Una idea por pantalla: aqui solo hay un formulario centrado.
+   ===================================================================== */
+.auth-shell {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--space-4);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(200, 217, 230, .55), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(245, 213, 218, .40), transparent 45%),
+    var(--bg-app);
+}
+
+.auth-caja { width: 100%; max-width: 26rem; }
+
+.auth-marca {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+.auth-marca .nombre {
+  font-size: var(--text-2xl); font-weight: 700; color: var(--text-strong);
+}
+.auth-marca .lema { color: var(--text-muted); font-size: var(--text-sm); }
+
+.auth-pie {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}

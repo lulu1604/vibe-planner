@@ -1,0 +1,340 @@
+/* =====================================================================
+   VibePlanner v2 - components.css
+   Botones, campos, insignias, avisos, tablas, modales.
+   Se carga DESPUES de tokens.css y base.css.
+
+   ESTOS NOMBRES DE CLASE ESTAN CONGELADOS. Antes de inventar
+   `.boton-peligro`, busca aqui: ya existe `.btn--danger`. Que ocho
+   pantallas hechas por cuatro personas parezcan una sola aplicacion
+   depende de esto mas que de ninguna otra cosa.
+   ===================================================================== */
+
+/* =====================================================================
+   1. BOTONES
+   Una sola variante primaria por pantalla. Si hay dos igual de
+   llamativas, no hay ninguna.
+   ===================================================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-6);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: 600 var(--text-sm)/1 var(--font-ui);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: .55; cursor: not-allowed; pointer-events: none;
+}
+
+.btn--primary   { background: var(--teal-700); color: var(--white); }
+.btn--primary:hover  { background: var(--navy); color: var(--white); }
+
+.btn--secondary { background: transparent; color: var(--teal-700);
+                  border-color: var(--border-strong); }
+.btn--secondary:hover { background: var(--bg-subtle); color: var(--navy); }
+
+.btn--ghost     { background: transparent; color: var(--text-muted);
+                  padding-inline: var(--space-3); }
+.btn--ghost:hover { background: var(--bg-subtle); color: var(--navy); }
+
+/* Destructivo: texto rosa oscuro sobre transparente, borde rosa.
+   NUNCA relleno rosa con texto blanco: da 3.20:1 y no pasa AA. */
+.btn--danger    { background: transparent; color: var(--rose-700);
+                  border-color: var(--rose); }
+.btn--danger:hover { background: var(--blush); color: var(--rose-700); }
+
+.btn--bloque    { width: 100%; }
+.btn--sm        { min-height: 36px; padding: var(--space-2) var(--space-3);
+                  font-size: var(--text-xs); }
+
+.btn-fila { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* =====================================================================
+   2. CAMPOS DE FORMULARIO
+   Orden fijo en TODA la aplicacion:
+       etiqueta  ->  campo  ->  ayuda  ->  error
+   La etiqueta va encima y siempre visible: un placeholder desaparece al
+   escribir y el usuario ya no sabe que campo es.
+   ===================================================================== */
+.field { display: flex; flex-direction: column; gap: var(--space-1);
+         margin-bottom: var(--space-4); }
+
+.field-etiqueta {
+  font-size: var(--text-sm); font-weight: 600; color: var(--text-strong);
+}
+.field-etiqueta .opcional { font-weight: 400; color: var(--text-muted); }
+
+.field-control {
+  min-height: var(--touch-min);
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-body);
+  /* 16 px minimo: por debajo, iOS hace zoom al enfocar y descuadra todo. */
+  font-size: var(--text-base);
+  transition: var(--transition);
+}
+.field-control:hover { border-color: var(--teal); }
+.field-control:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
+.field-control[disabled] { background: var(--slate); color: var(--text-muted); cursor: not-allowed; }
+
+/* H10: la ayuda se ve ANTES de escribir, no cuando ya fallo. */
+.field-ayuda { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* El error va debajo de su campo, con icono ADEMAS del color: quien no
+   distingue el rosa tiene que poder verlo igual. */
+.field-error {
+  display: flex; align-items: flex-start; gap: var(--space-1);
+  font-size: var(--text-xs); font-weight: 600; color: var(--error-text);
+}
+.field-error::before { content: "\26A0"; font-size: var(--text-sm); line-height: 1.2; }
+
+.field-control[aria-invalid="true"] {
+  border-color: var(--error-border);
+  border-width: 2px;
+  background: color-mix(in srgb, var(--error-bg) 25%, var(--white));
+}
+
+/* Casillas con su descripcion al lado: reconocer, no recordar. */
+.field-casillas { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.casilla {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  cursor: pointer;
+}
+.casilla:hover { border-color: var(--teal); }
+.casilla input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--teal-700); }
+.casilla input[disabled] { cursor: not-allowed; }
+.casilla-titulo { font-weight: 600; color: var(--text-strong); }
+.casilla-desc   { font-size: var(--text-xs); color: var(--text-muted); }
+.casilla:has(input[disabled]) { background: var(--bg-app); cursor: default; }
+
+/* =====================================================================
+   3. TARJETA
+   ===================================================================== */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+.card--plano { box-shadow: none; }
+.card-titulo { margin-bottom: var(--space-4); }
+
+/* =====================================================================
+   4. AVISOS  (los flash de Flask)
+   Que digan QUE paso, no "Guardado".
+   ===================================================================== */
+.alert-zona { display: flex; flex-direction: column; gap: var(--space-2);
+              margin-bottom: var(--space-6); }
+
+.alert {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.alert::before { font-weight: 700; }
+
+.alert--ok    { background: var(--ok-bg);    color: var(--navy);
+                border-color: var(--ok-border); }
+.alert--ok::before { content: "\2713"; }
+
+.alert--error { background: var(--error-bg); color: var(--rose-700);
+                border-color: var(--error-border); }
+.alert--error::before { content: "\26A0"; }
+
+.alert--info  { background: var(--bg-subtle); color: var(--navy);
+                border-color: var(--teal); }
+.alert--info::before { content: "\2139"; }
+
+/* =====================================================================
+   5. INSIGNIAS
+   REGLA BLOQUEANTE: el color NUNCA es la unica senal. Toda insignia
+   lleva tambien su texto. Alrededor de 1 de cada 12 hombres tiene
+   daltonismo rojo-verde y nuestras dos paletas son azul y rosa: en
+   escala de grises se confunden.
+   ===================================================================== */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs); font-weight: 600;
+  white-space: nowrap;
+}
+.badge--rol-usuario { background: var(--bg-subtle); color: var(--navy);
+                      border-color: var(--teal); }
+.badge--rol-admin   { background: var(--blush);    color: var(--rose-700);
+                      border-color: var(--rose); }
+.badge--activa      { background: var(--bg-subtle); color: var(--navy);
+                      border-color: var(--teal); }
+.badge--inactiva    { background: var(--slate);     color: var(--taupe);
+                      border-color: var(--border-strong); }
+.badge--tu          { background: transparent; color: var(--text-muted);
+                      border-color: var(--border-strong); }
+
+.badge-grupo { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+
+/* =====================================================================
+   6. TABLA -> TARJETAS
+   Movil primero: cada cuenta es una tarjeta. Una tabla de 6 columnas a
+   360 px es ilegible. A partir de 900 px se convierte en tabla de verdad.
+   ===================================================================== */
+.tabla-envoltura { overflow-x: auto; }
+
+.tabla { width: 100%; border-collapse: collapse; }
+
+.tabla thead { display: none; }
+
+.tabla tbody tr {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.tabla tbody tr.es-tu-fila { border-color: var(--teal); border-left-width: 4px; }
+
+.tabla td { display: flex; gap: var(--space-3); align-items: baseline;
+            padding: 0; border: 0; }
+
+/* La cabecera de cada dato viaja en data-etiqueta y se pinta solo en movil. */
+.tabla td::before {
+  content: attr(data-etiqueta);
+  flex: 0 0 6.5rem;
+  font-size: var(--text-xs); font-weight: 600; color: var(--text-muted);
+}
+.tabla td.celda-acciones { justify-content: flex-start; flex-wrap: wrap;
+                           gap: var(--space-2); margin-top: var(--space-2); }
+.tabla td.celda-acciones::before { display: none; }
+
+@media (min-width: 900px) {
+  .tabla thead { display: table-header-group; }
+  .tabla thead th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-size: var(--text-xs); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+  }
+  .tabla tbody tr {
+    display: table-row;
+    margin: 0; padding: 0; box-shadow: none;
+    border: 0; border-bottom: 1px solid var(--border);
+    background: transparent; border-radius: 0;
+  }
+  .tabla tbody tr.es-tu-fila { background: color-mix(in srgb, var(--sky) 30%, transparent); }
+  .tabla td {
+    display: table-cell;
+    padding: var(--space-3) var(--space-4);
+    vertical-align: middle;
+  }
+  .tabla td::before { display: none; }
+  .tabla td.celda-acciones { white-space: nowrap; }
+}
+
+/* =====================================================================
+   7. ESTADO VACIO
+   Nunca una pantalla en blanco: que falta, por que importa, y el boton.
+   ===================================================================== */
+.estado-vacio {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+}
+.estado-vacio h3 { color: var(--text-strong); }
+
+/* =====================================================================
+   8. BUSCADOR Y PAGINACION
+   ===================================================================== */
+.barra-filtros {
+  display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end;
+  margin-bottom: var(--space-6);
+}
+.barra-filtros .field { margin-bottom: 0; flex: 1 1 16rem; }
+
+.paginacion {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  font-size: var(--text-sm); color: var(--text-muted);
+}
+
+/* =====================================================================
+   9. MODAL
+   <dialog> nativo a proposito: trae de fabrica el cierre con Escape, la
+   trampa de foco y -- lo que siempre se olvida -- devolver el foco al
+   boton que lo abrio. Reimplementarlo con divs es como se rompe la
+   navegacion por teclado.
+   Nada de confirm(): bloquea la pagina, no se puede estilar y no dice
+   nada util.
+   ===================================================================== */
+.modal {
+  width: min(32rem, calc(100vw - var(--space-8)));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  color: var(--text-body);
+  box-shadow: var(--shadow-lg);
+}
+.modal::backdrop { background: rgba(47, 65, 86, .55); }
+
+.modal-cabecera {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) var(--space-3);
+}
+.modal-cabecera h2 { font-size: var(--text-lg); }
+
+.modal-cerrar {
+  display: grid; place-items: center;
+  width: var(--touch-min); height: var(--touch-min);
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) 0 0;
+  border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-muted);
+  font-size: var(--text-xl); line-height: 1; cursor: pointer;
+}
+.modal-cerrar:hover { background: var(--bg-subtle); color: var(--navy); }
+
+.modal-cuerpo { padding: 0 var(--space-6); }
+.modal-cuerpo p { margin-bottom: var(--space-3); }
+
+.modal-pie {
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+/* =====================================================================
+   10. UTILIDADES
+   ===================================================================== */
+.pila-2 { display: flex; flex-direction: column; gap: var(--space-2); }
+.pila-4 { display: flex; flex-direction: column; gap: var(--space-4); }
+.fila-entre { display: flex; align-items: center; justify-content: space-between;
+              gap: var(--space-3); flex-wrap: wrap; }
+.sin-margen { margin: 0; }

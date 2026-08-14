@@ -14,6 +14,18 @@ CONTRATOS CONGELADOS - no cambiar estas firmas sin avisar al grupo:
 Cada tarea es un dict con las claves:
     id, title, category, priority_level, due_date, estimated_minutes,
     status, created_at
+
+---------------------------------------------------------------------------
+AMPLIACION v2 (Piero Calderon, Modulo A) - 2026-08-13
+    Las 6 firmas de arriba NO se han tocado. Lo unico anadido es capa de
+    conexion, que es territorio del nucleo:
+        _aplicar_pragmas(conn)   PRAGMAs obligatorios de cada conexion
+        raw_connection()         conexion fuera del ciclo de peticion
+        init_db()                ahora ejecuta ademas schema_v2.sql
+    Nada de esto cambia el comportamiento de las consultas de tareas: los 4
+    asserts del final de este archivo y los 11 de `python app.py test` siguen
+    pasando igual.
+---------------------------------------------------------------------------
 """
 
 import os
@@ -39,12 +51,48 @@ CREATE TABLE IF NOT EXISTS tasks (
 """
 
 
+# Esquema de identidad del Modulo A (Piero). Vive en un .sql aparte porque es
+# la fuente unica de verdad del nucleo y lo revisa Jose como dueno del esquema.
+SCHEMA_V2_PATH = os.path.join(BASE_DIR, "schema_v2.sql")
+
+
+def _aplicar_pragmas(conn):
+    """
+    Los tres PRAGMAs de cada conexion. NO son persistentes: se guardan en la
+    conexion, no en el archivo, asi que hay que repetirlos SIEMPRE -- tambien
+    en seed.py y en las pruebas.
+
+    El primero es el que duele: sin `foreign_keys = ON`, SQLite ignora las
+    claves foraneas EN SILENCIO. Borras un usuario y sus filas de user_roles
+    quedan apuntando a un id que ya no existe, sin un solo error.
+    """
+    conn.execute("PRAGMA foreign_keys = ON")
+    # WAL permite leer mientras alguien escribe (riesgo R8). Si en
+    # PythonAnywhere apareciera "database is locked", el plan B documentado es
+    # volver a `journal_mode = DELETE` y subir el timeout a 20 s.
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 10000")   # 10 s antes de rendirse
+    return conn
+
+
 def get_db():
     """Una conexión por petición. NO usar una conexión global compartida."""
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, timeout=10)
         g.db.row_factory = sqlite3.Row
+        _aplicar_pragmas(g.db)
     return g.db
+
+
+def raw_connection():
+    """
+    Conexion FUERA del ciclo de peticion, con los mismos PRAGMAs.
+    La usan seed.py, migraciones y las pruebas, que corren sin contexto Flask
+    y por tanto no pueden tocar `g`. Quien la abre, la cierra.
+    """
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    conn.row_factory = sqlite3.Row
+    return _aplicar_pragmas(conn)
 
 
 def close_db(exception=None):
@@ -54,8 +102,22 @@ def close_db(exception=None):
 
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    """
+    Crea el esquema v1 (tasks) y, si existe, el de identidad v2.
+
+    Los dos son CREATE TABLE IF NOT EXISTS, asi que llamarlo mil veces no hace
+    nada. schema_v2.sql es ESTRICTAMENTE ADITIVO: anade sus 5 tablas y no
+    modifica `tasks`, para que la v1 siga funcionando mientras se construye
+    el nucleo.
+    """
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    _aplicar_pragmas(conn)
     conn.executescript(SCHEMA)
+
+    if os.path.exists(SCHEMA_V2_PATH):
+        with open(SCHEMA_V2_PATH, "r", encoding="utf-8") as archivo:
+            conn.executescript(archivo.read())
+
     conn.commit()
     conn.close()
 
