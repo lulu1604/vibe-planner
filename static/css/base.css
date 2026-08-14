@@ -252,6 +252,21 @@ a:hover { color: var(--navy); }
     max-width: var(--content-max-ancho);
     padding-inline: var(--space-6);
   }
+
+  /* CINTURON DE SEGURIDAD.
+     Lo de arriba obliga a que cada plantilla se acuerde de declarar el bloque
+     `ancho`. Si a alguien se le olvida -- o anade una pantalla nueva con una
+     cuadricula -- la pantalla vuelve al ancho de lectura sin que nadie lo note.
+     Esto lo detecta por el CONTENIDO: si dentro hay una cuadricula, no es
+     texto, y no se le aplica el limite de 75 caracteres.
+     `:has()` funciona en Chrome 105+, Safari 15.4+ y Firefox 121+. Si un
+     navegador viejo lo ignora, se cae de pie: queda el ancho de lectura. */
+  .contenido:has(.calendar-grid),
+  .contenido:has(.kanban-board),
+  .contenido:has(.metrica-rejilla) {
+    max-width: var(--content-max-ancho);
+    padding-inline: var(--space-6);
+  }
 }
 
 /* En monitores anchos el sidebar se ensancha un poco: cabe la etiqueta
