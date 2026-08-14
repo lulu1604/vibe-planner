@@ -240,6 +240,27 @@ a:hover { color: var(--navy); }
   /* Maximo ~75 caracteres por linea: por eso el contenido se acota aunque
      la pantalla sea mas ancha. */
   .contenido {
+    /* `width: 100%` NO SOBRA, es lo que arregla el bug.
+       ------------------------------------------------------------------
+       `.contenido` es un elemento de grid (la columna 1fr de .app-shell).
+       Un elemento de grid se estira para llenar su celda... salvo si tiene
+       un margen AUTOMATICO en ese eje: entonces el margen absorbe el hueco
+       libre, el `stretch` deja de aplicarse y el elemento pasa a medir
+       `fit-content` -- lo que ocupe su contenido.
+
+       Como aqui hay `margin-inline: auto` para centrarlo, cada pantalla
+       acababa con un ancho distinto segun lo que llevara dentro: habitos
+       425 px, calendario 574 px, perfil 775 px, y metricas 1200 px solo
+       porque su texto era largo. Parecia un max-width mal puesto y era el
+       elemento encogiendose.
+
+       El calendario era el peor caso: sus columnas son `repeat(7, 1fr)`, y
+       al medirse por contenido cada 1fr se resolvia a su min-content -- un
+       numero de dos cifras -- asi que la cuadricula entera se estrechaba.
+
+       Con un ancho explicito el elemento vuelve a llenar la columna, el
+       max-width lo acota y el margen automatico solo lo centra. */
+    width: 100%;
     max-width: var(--content-max);
     margin-inline: auto;
     padding: var(--space-8);
