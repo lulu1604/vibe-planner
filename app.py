@@ -32,6 +32,7 @@ from calendar_bp import calendar_bp
 from habits import habitos as habitos_bp
 from home import home as home_bp, register_menu
 from perfil import perfil as perfil_bp
+from planner import planner as planner_bp
 
 app = Flask(__name__)          # <-- NO TOCAR ESTA LÍNEA
 
@@ -54,6 +55,7 @@ app.register_blueprint(admin_bp)       # /admin/usuarios
 app.register_blueprint(perfil_bp)      # /perfil
 app.register_blueprint(calendar_bp)    # /calendario /eventos /invitacion
 app.register_blueprint(habitos_bp)     # /habitos /metricas /admin/metricas
+app.register_blueprint(planner_bp)     # /planner /kanban /equipo/tareas
 
 
 @app.errorhandler(400)

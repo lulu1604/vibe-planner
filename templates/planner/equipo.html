@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{#
+  templates/planner/equipo.html — US10: Tareas asignadas al equipo
+  DUENA: Lucero Ayala (Módulo B)
+#}
+
+{% block title %}Equipo · VibePlanner{% endblock %}
+{% block encabezado %}Tareas del equipo{% endblock %}
+{% block subtitulo %}
+  <p class="text-muted">Actividades que asignaste a otros integrantes.</p>
+{% endblock %}
+
+{% block acciones %}
+  <a class="btn btn--secondary" href="{{ url_for('planner.dia') }}">
+    ← Mi planner
+  </a>
+{% endblock %}
+
+{% block content %}
+
+{% if not por_persona %}
+  <div class="estado-vacio">
+    <h3>Aún no has asignado actividades</h3>
+    <p>Cuando crees una tarea y la asignes a otro usuario, aparecerá aquí agrupada por persona.</p>
+    <a class="btn btn--primary" href="{{ url_for('planner.dia') }}">Ir al planner</a>
+  </div>
+{% else %}
+  {# Resumen: total de tareas y cuántas están pendientes #}
+  {% set total_asignadas = namespace(n=0) %}
+  {% set total_pendientes = namespace(n=0) %}
+  {% for persona, tareas in por_persona.items() %}
+    {% set total_asignadas.n = total_asignadas.n + tareas|length %}
+    {% for t in tareas %}
+      {% if t.kanban_column in ['todo', 'ongoing'] %}
+        {% set total_pendientes.n = total_pendientes.n + 1 %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  <div class="card" style="margin-bottom:var(--space-6);">
+    <p class="text-muted">
+      <strong style="color:var(--text-strong);">{{ total_pendientes.n }}</strong>
+      pendientes de
+      <strong style="color:var(--text-strong);">{{ total_asignadas.n }}</strong>
+      tareas asignadas a
+      <strong style="color:var(--text-strong);">{{ por_persona|length }}</strong>
+      {% if por_persona|length == 1 %}persona{% else %}personas{% endif %}.
+    </p>
+  </div>
+
+  {% for persona, tareas in por_persona.items() %}
+    <section style="margin-bottom:var(--space-8);">
+      <h2 style="font-size:var(--text-base);font-weight:700;
+                 color:var(--navy);margin-bottom:var(--space-3);
+                 border-bottom:2px solid var(--border);padding-bottom:var(--space-2);">
+        {{ persona }}
+        <span style="font-family:var(--font-data);font-weight:400;
+                     font-size:var(--text-sm);color:var(--text-muted);">
+          ({{ tareas|length }} tarea{% if tareas|length != 1 %}s{% endif %})
+        </span>
+      </h2>
+
+      <div class="pila-4">
+        {% for tarea in tareas %}
+          {% set col_labels = {
+            'backlog':'Backlog','todo':'Por hacer',
+            'ongoing':'En curso','done':'Hecho'
+          } %}
+          {% if tarea.priority_level == 1 %}
+            {% set borde = "var(--rose)" %}
+          {% elif tarea.priority_level == 2 %}
+            {% set borde = "var(--slate)" %}
+          {% else %}
+            {% set borde = "var(--steel)" %}
+          {% endif %}
+
+          <article class="task-card" style="border-left-color:{{ borde }};">
+            <div class="fila-entre" style="margin-bottom:var(--space-2);">
+              <h3 style="margin:0;">{{ tarea.title }}</h3>
+              <span style="background:var(--bg-subtle);color:var(--text-muted);
+                           padding:2px 10px;border-radius:var(--radius-pill);
+                           font-size:var(--text-xs);font-weight:600;">
+                {{ col_labels.get(tarea.kanban_column, tarea.kanban_column) }}
+              </span>
+            </div>
+            {% if tarea.description %}
+              <p class="text-muted" style="font-size:var(--text-sm);margin-bottom:var(--space-2);">
+                {{ tarea.description }}
+              </p>
+            {% endif %}
+            <p class="text-muted" style="font-size:var(--text-sm);">
+              {{ tarea.category }} · Vence
+              <strong style="color:var(--navy);">{{ tarea.due_date }}</strong>
+              · {{ tarea.estimated_minutes }} min
+            </p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}
