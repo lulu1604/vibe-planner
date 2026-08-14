@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{#
+  templates/planner/kanban.html — US9: Tablero Kanban
+  DUENA: Lucero Ayala (Módulo B)
+#}
+
+{% block title %}Kanban · VibePlanner{% endblock %}
+{% block encabezado %}Tablero Kanban{% endblock %}
+{% block subtitulo %}
+  <p class="text-muted">Arrastra las tarjetas entre columnas o usa los botones.</p>
+{% endblock %}
+
+{% block acciones %}
+  {% if has_permission('planner.crear') %}
+    <a class="btn btn--primary" href="{{ url_for('planner.dia') }}">
+      + Nueva actividad
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kanban-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .kanban-col {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    min-height: 300px;
+  }
+
+  .kanban-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .kanban-col-header h2 {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .kanban-contador {
+    font-family: var(--font-data);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    background: var(--bg-surface);
+    color: var(--text-strong);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border);
+  }
+
+  .kanban-cards { display: flex; flex-direction: column; gap: var(--space-3); }
+
+  .kanban-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-3);
+    cursor: grab;
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .kanban-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .kanban-card.dragging { opacity: .5; cursor: grabbing; }
+
+  .kanban-card-score {
+    font-family: var(--font-data);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--teal-700);
+    margin-bottom: var(--space-1);
+  }
+
+  .kanban-card h3 {
+    font-size: var(--text-sm);
+    margin: 0 0 var(--space-2);
+    color: var(--text-strong);
+  }
+
+  .kanban-card-meta {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
+  }
+
+  /* Borde izquierdo por prioridad */
+  .kanban-card.prio-1 { border-left: 3px solid var(--rose); }
+  .kanban-card.prio-2 { border-left: 3px solid var(--slate); }
+  .kanban-card.prio-3 { border-left: 3px solid var(--steel); }
+
+  /* Columna drop-target activa */
+  .kanban-col.drop-over {
+    background: color-mix(in srgb, var(--sky) 40%, var(--bg-subtle));
+    border-color: var(--teal);
+  }
+
+  @media (max-width: 600px) {
+    /* En móvil las columnas se apilan — 4 col de 90px son ilegibles (TC-43) */
+    .kanban-board { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Mapa de nombres legibles para las columnas #}
+{% set nombres_col = {
+  'backlog': 'Backlog',
+  'todo': 'Por hacer',
+  'ongoing': 'En curso',
+  'done': 'Hecho'
+} %}
+{% set colores_col = {
+  'backlog': 'var(--steel)',
+  'todo': 'var(--navy)',
+  'ongoing': 'var(--teal-700)',
+  'done': 'var(--rose-700)'
+} %}
+
+<div class="kanban-board" id="kanban-board">
+  {% for col in columnas %}
+  <div class="kanban-col"
+       id="col-{{ col }}"
+       data-column="{{ col }}"
+       aria-label="Columna {{ nombres_col[col] }}">
+
+    <div class="kanban-col-header">
+      <h2 style="color:{{ colores_col[col] }};">{{ nombres_col[col] }}</h2>
+      <span class="kanban-contador">{{ board[col] | length }}</span>
+    </div>
+
+    <div class="kanban-cards" id="cards-{{ col }}">
+      {% if not board[col] %}
+        <p class="text-muted" style="font-size:var(--text-xs);text-align:center;
+           padding:var(--space-6) 0;">
+          Sin actividades
+        </p>
+      {% endif %}
+
+      {% for tarea in board[col] %}
+        <div class="kanban-card prio-{{ tarea.priority_level }}"
+             draggable="true"
+             data-task-id="{{ tarea.id }}"
+             data-current-col="{{ col }}"
+             id="card-{{ tarea.id }}">
+
+          <div class="kanban-card-score">{{ tarea.score if tarea.score is defined else '–' }} pts</div>
+          <h3>{{ tarea.title }}</h3>
+          <div class="kanban-card-meta">
+            {{ tarea.category }} · {{ tarea.due_date }} · {{ tarea.estimated_minutes }} min
+            {% if tarea.assigned_by %}
+              <br><span style="color:var(--teal-700);">Asignada</span>
+            {% endif %}
+          </div>
+
+          {# Botón de fallback (sin JS / accesibilidad) #}
+          {% if has_permission('kanban.mover') %}
+            <details style="margin-top:var(--space-2);">
+              <summary class="btn btn--ghost btn--sm"
+                       style="display:inline-flex;cursor:pointer;font-size:var(--text-xs);">
+                Mover
+              </summary>
+              <div style="display:flex;flex-wrap:wrap;gap:var(--space-1);margin-top:var(--space-2);">
+                {% for dest in columnas %}
+                  {% if dest != col %}
+                    <form method="post"
+                          action="{{ url_for('planner.mover_columna', task_id=tarea.id) }}">
+                      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                      <input type="hidden" name="column" value="{{ dest }}">
+                      <button class="btn btn--secondary btn--sm" type="submit">
+                        {{ nombres_col[dest] }}
+                      </button>
+                    </form>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </details>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    // Token CSRF para las peticiones fetch del kanban.js
+    const CSRF_TOKEN = "{{ csrf_token() }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/kanban.js') }}" defer></script>
+{% endblock %}

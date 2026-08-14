@@ -40,6 +40,7 @@ PERMISOS = [
     ("planner.eliminar",      "planner",    "Eliminar sus actividades"),
     ("kanban.ver",            "planner",    "Ver el tablero Kanban"),
     ("kanban.mover",          "planner",    "Mover actividades entre columnas"),
+    ("tarea.asignar",         "planner",    "Asignar tareas a otros integrantes"),
     # --- Calendario (Modulo C) --------------------------------------------
     ("calendario.ver",        "calendario", "Ver el calendario mensual"),
     ("evento.crear",          "calendario", "Crear eventos"),
@@ -67,18 +68,30 @@ PERMISOS = [
 # Se suman solos, porque el administrador lleva LOS DOS roles. Repetirlos aqui
 # funcionaria igual hoy y seria una mentira sobre como funciona el modelo.
 # --------------------------------------------------------------------------
+# Permisos que NO son del modulo `admin` pero que tampoco van al rol `usuario`.
+#
+# `tarea.asignar` es US10 -- asignar trabajo a otras personas -- y el alcance
+# v2.1 la difirio al backlog v3 junto con el rol `lider` (ver 00_INDICE.md).
+# Sembrarla y darsela a TODOS dejaria a cualquier cuenta repartiendo tareas a
+# las demas, que es justo lo que se acordo no hacer todavia.
+#
+# Se acota a `admin` en vez de retirarla: asi la pantalla /equipo/tareas del
+# Modulo B no queda como codigo muerto, y el dia que el equipo reabra US10 con
+# el rol `lider` basta con mover el codigo de esta lista a la de ese rol.
+SOLO_ADMIN = {"tarea.asignar"}
+
 ROLES = [
     (
         "usuario",
         "Usuario",
         "Usa la aplicacion: su planner, calendario y habitos.",
-        [c for c, m, _ in PERMISOS if m != "admin"],
+        [c for c, m, _ in PERMISOS if m != "admin" and c not in SOLO_ADMIN],
     ),
     (
         "admin",
         "Administrador",
-        "Gestiona cuentas y ve las metricas del sistema.",
-        [c for c, m, _ in PERMISOS if m == "admin"],
+        "Gestiona cuentas, asigna tareas y ve las metricas del sistema.",
+        [c for c, m, _ in PERMISOS if m == "admin" or c in SOLO_ADMIN],
     ),
 ]
 

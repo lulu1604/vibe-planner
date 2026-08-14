@@ -139,8 +139,12 @@ def main():
         p_piero = repo_users.get_permissions(piero["id"], conn=db)
         db.close()
 
+    # 17 y 24: el Modulo B anadio `tarea.asignar` (US10), acotada al rol admin
+    # porque US10 sigue diferida al backlog v3. El usuario normal no la tiene.
     comprobar("TC 6.1  un rol -> 17 permisos", len(p_piero) == 17, len(p_piero))
-    comprobar("TC 6.2  dos roles -> 23 permisos (la union)", len(p_admin) == 23, len(p_admin))
+    comprobar("TC 6.2  dos roles -> 24 permisos (la union)", len(p_admin) == 24, len(p_admin))
+    comprobar("        un usuario normal NO puede asignar tareas a otros (US10 diferida)",
+              "tarea.asignar" not in p_piero and "tarea.asignar" in p_admin)
     comprobar("        el admin conserva los permisos de usuario",
               p_piero.issubset(p_admin))
 
@@ -495,6 +499,60 @@ def main():
     comprobar("        el menu enlaza el calendario de verdad",
               "/calendario" in html,
               "home.py apunta a un endpoint que no existe y sale 'Proximamente'")
+
+    print("\n--- BLOQUE B: planner y kanban (US1-US4, US8-US9) ---")
+
+    # --- TC-08: el desglose del puntaje NO cruza cuentas -----------------
+    #
+    # Aqui vivia un respaldo que leia de la tabla `tasks` de la v1 cuando la
+    # tarea no era tuya. Como esa tabla no tiene `user_id`, devolvia CUALQUIER
+    # tarea de CUALQUIER cuenta con HTTP 200.
+    #
+    # La prueba del Modulo B no lo veia porque su base deja la tabla v1 vacia:
+    # el respaldo devolvia None y el 404 salia por casualidad. Por eso este
+    # assert SIEMBRA una fila en la tabla v1 antes de preguntar: sin ese dato,
+    # la comprobacion pasa sin comprobar nada.
+    with app.app_context():
+        db = database.raw_connection()
+        db.execute("INSERT INTO tasks (title, due_date, estimated_minutes, priority_level) "
+                   "VALUES ('Tarea heredada de la v1', '2026-08-20', 45, 1)")
+        db.commit()
+        tarea_v1 = db.execute(
+            "SELECT id FROM tasks WHERE title='Tarea heredada de la v1'").fetchone()["id"]
+        db.close()
+
+    r = jose_cli.get(f"/v2/api/task/{tarea_v1}/score-breakdown?available=120")
+    comprobar("TC-08   el desglose de una tarea ajena responde 404  <-- BLOQUEANTE",
+              r.status_code == 404,
+              f"devolvio {r.status_code}: se esta filtrando el puntaje de otra cuenta")
+
+    # --- Aislamiento del planner ----------------------------------------
+    r = _post(jose_cli, "/v2/tasks", title="Tarea de josec", due_date="2026-08-25",
+              estimated_minutes="30", priority_level="1", category="Estudio")
+    comprobar("        crear una tarea en el planner (302)", r.status_code == 302, r.status_code)
+
+    html = ana_cli.get("/planner").get_data(as_text=True)
+    comprobar("TC-11   ana no ve las tareas de josec en su planner",
+              "Tarea de josec" not in html)
+    html = ana_cli.get("/kanban").get_data(as_text=True)
+    comprobar("TC-11   ...ni en su kanban", "Tarea de josec" not in html)
+
+    with app.app_context():
+        db = database.raw_connection()
+        t_id = db.execute(
+            "SELECT id FROM tasks_v2 WHERE title='Tarea de josec'").fetchone()["id"]
+        db.close()
+
+    r = _post(ana_cli, f"/v2/tasks/{t_id}/delete")
+    with app.app_context():
+        db = database.raw_connection()
+        sigue = db.execute("SELECT COUNT(*) c FROM tasks_v2 WHERE id=?",
+                           (t_id,)).fetchone()["c"]
+        db.close()
+    comprobar("TC-08   ana no puede borrar la tarea de josec", sigue == 1)
+
+    r = ana_cli.get(f"/v2/api/task/{t_id}/score-breakdown")
+    comprobar("TC-08   ...ni ver su desglose (404)", r.status_code == 404, r.status_code)
 
     print("\n--- Transversales ---")
 
