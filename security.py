@@ -33,7 +33,7 @@ CSRF_FIELD = "_csrf"
 
 METODOS_SEGUROS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
-# Rutas de la v1 exentas de CSRF durante la transicion.
+# Exenciones de CSRF
 CSRF_EXENTAS = frozenset({
     "add_task_route",
     "delete_task_route",
