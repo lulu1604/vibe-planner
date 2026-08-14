@@ -21,6 +21,29 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
   {% block extra_css %}{% endblock %}
+
+  {#
+    El tema se aplica AQUI, en el <head>, y no en ui.js.
+
+    Es el unico script en linea del proyecto y tiene un motivo concreto: si
+    esperase a que cargue ui.js (que va con `defer`), el navegador ya habria
+    pintado la pagina en claro y se veria un fogonazo blanco en cada carga.
+    Poniendolo antes del <body>, el atributo esta puesto cuando se pinta el
+    primer pixel.
+
+    La lista blanca no es decoracion: `localStorage` lo puede escribir
+    cualquier script, y de ahi sale directo a un atributo del <html>.
+  #}
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("vibeplanner-tema");
+        if (t === "oscuro" || t === "alto-contraste") {
+          document.documentElement.setAttribute("data-tema", t);
+        }
+      } catch (e) { /* modo incognito con almacenamiento bloqueado: tema claro */ }
+    })();
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
@@ -65,6 +88,7 @@
 
   {% if usuario_actual %}
     {% include "components/_bottom_nav.html" %}
+    {% include "components/_modal_ajustes.html" %}
   {% endif %}
 
   <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>

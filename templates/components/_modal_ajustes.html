@@ -1,0 +1,76 @@
+{#
+  Apariencia de la aplicacion.
+  --------------------------------------------------------------------------
+  Se abre desde el menu de cuenta. NO tiene permiso ni ruta: es una
+  preferencia de quien mira la pantalla, no un dato del sistema, asi que vive
+  en el navegador (localStorage) y no en la base. Eso ademas evita una
+  peticion al servidor y un `user_settings` que nadie ha pedido.
+
+  Los tres temas cambian SOLO las variables de tokens.css. Ni un componente
+  se entera, que es toda la ventaja de haber nombrado los tokens por funcion
+  ("texto tenue") en vez de por color ("gris").
+
+  Sin JavaScript el dialogo no abre. Es aceptable aqui y solo aqui: no se
+  pierde ninguna funcion de la aplicacion, solo la preferencia visual, y el
+  tema por defecto es el claro, que es el verificado.
+#}
+<dialog class="modal" id="modal-ajustes" aria-labelledby="titulo-ajustes">
+  <div class="modal-cabecera">
+    <h2 id="titulo-ajustes">Apariencia</h2>
+    <button class="modal-cerrar" type="button" aria-label="Cerrar" data-cierra-modal>
+      &times;
+    </button>
+  </div>
+
+  <div class="modal-cuerpo">
+    <fieldset style="border:0; padding:0; margin:0;">
+      <legend class="field-etiqueta" style="padding:0; margin-bottom:var(--space-3);">
+        Tema de color
+      </legend>
+
+      <div class="field-casillas" data-selector-tema>
+        {#
+          Radios de verdad, no botones: son opciones excluyentes, y asi se
+          recorren con las flechas y se anuncian como grupo sin que haya que
+          programar nada.
+
+          Cada opcion lleva su NOMBRE ademas de la muestra de color: el color
+          nunca es la unica senal, y en un selector de temas eso es doblemente
+          cierto -- quien no distingue los tonos es justo quien viene aqui.
+        #}
+        {% for valor, nombre, descripcion, muestras in [
+            ("claro", "Claro", "El de siempre: fondo beige y barra lateral azul noche.",
+             ["#F5EFEB", "#2F4156", "#3F5F6E"]),
+            ("oscuro", "Oscuro", "Descansa la vista de noche. Contraste verificado, no solo invertido.",
+             ["#1B2735", "#243546", "#A9BACB"]),
+            ("alto-contraste", "Alto contraste", "Negro sobre blanco y bordes gruesos, para cuando el color no basta.",
+             ["#FFFFFF", "#000000", "#0033CC"])] %}
+          <label class="casilla" for="tema-{{ valor }}">
+            <input type="radio" id="tema-{{ valor }}" name="tema" value="{{ valor }}">
+            <span>
+              <span class="casilla-titulo">{{ nombre }}</span>
+              <span class="muestra-tema" aria-hidden="true">
+                {% for color in muestras %}
+                  <span style="background: {{ color }};"></span>
+                {% endfor %}
+              </span>
+              <span class="casilla-desc">{{ descripcion }}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <p class="field-ayuda" style="margin-top: var(--space-4);">
+      El cambio se aplica al instante y se recuerda en este navegador. No
+      afecta a nadie mas ni cambia tus datos.
+    </p>
+  </div>
+
+  <div class="modal-pie">
+    <button class="btn btn--secondary" type="button" data-restablece-tema>
+      Volver al tema claro
+    </button>
+    <button class="btn btn--primary" type="button" data-cierra-modal>Listo</button>
+  </div>
+</dialog>

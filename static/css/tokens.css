@@ -77,6 +77,7 @@
   --score-urgency:  var(--navy);
   --score-timefit:  var(--teal-700);
 
+
   /* -------------------------------------------------------------------
      5. Tipografia
      ------------------------------------------------------------------- */
@@ -134,6 +135,100 @@
      ultrapanoramico las columnas no queden absurdamente separadas. */
   --content-max-ancho:      1800px;
   --touch-min:                44px;   /* objetivo tactil minimo */
+}
+
+
+/* =====================================================================
+   TEMAS
+   ---------------------------------------------------------------------
+   Solo se redefinen los ROLES SEMANTICOS del bloque 3. Ni un componente
+   cambia: esa es toda la ventaja de haber nombrado los tokens por funcion
+   ("texto tenue") y no por color ("gris").
+
+   TODOS los valores de aqui estan MEDIDOS, no elegidos a ojo. El tema
+   oscuro se descarto en su dia justo por esto: con la paleta clara puesta
+   sobre fondo oscuro fallaban cinco roles -- el texto tenue daba 1.49:1,
+   el de error 1.90:1 y el anillo de foco 1.84:1, o sea invisible.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   OSCURO. Recupera el glassmorphism de la v1 con tokens que si pasan AA.
+   Ratios sobre la superficie #243546:
+     texto normal 11.02:1 - tenue 6.32:1 - error 6.71:1 - foco 8.68:1
+     bordes 3.18:1 (minimo 3:1 para delimitar un campo)
+   --------------------------------------------------------------------- */
+[data-tema="oscuro"] {
+  --bg-app:        #1B2735;
+  --bg-surface:    #243546;
+  --bg-sidebar:    #16202C;
+  --bg-subtle:     #2E4256;
+
+  --text-strong:   #FFFFFF;      /* 12.55:1 */
+  --text-body:     #F5EFEB;      /* 11.02:1 */
+  --text-muted:    #A9BACB;      /*  6.32:1 -- el --taupe daba 1.49:1 */
+  --text-on-dark:  #F5EFEB;
+
+  --border:        #3C4F63;      /* separador visual, no delimita nada */
+  --border-strong: #68839D;      /*  3.18:1 -- este SI delimita campos */
+
+  --focus-ring:         #C8D9E6; /*  8.68:1 -- el --teal-700 daba 1.84:1 */
+  --focus-ring-on-dark: #C8D9E6;
+
+  --error-text:    #F5A9B5;      /*  6.71:1 -- el --rose-700 daba 1.90:1 */
+  --error-bg:      #4A2730;
+  --error-border:  #C4707F;
+  --ok-text:       #7FC5C0;      /*  6.37:1 */
+  --ok-bg:         #1F3D3B;
+  --ok-border:     #4E8C87;
+
+  /* El puntaje conserva SUS TRES COLORES distinguibles, aclarados para que
+     se lean sobre oscuro: si los tres convergieran al mismo tono, el modal
+     de "por que este orden" dejaria de explicar nada. */
+  --score-priority: #F5A9B5;
+  --score-urgency:  #9FC4E8;
+  --score-timefit:  #7FC5C0;
+
+  /* Las sombras del tema claro son azul translucido y sobre un fondo oscuro
+     no se ven: una tarjeta sin sombra ni borde visible flota sin despegarse
+     del fondo. En oscuro se usa negro, que si separa. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, .55);
+}
+
+/* ---------------------------------------------------------------------
+   ALTO CONTRASTE. Para quien no distingue bien los tonos suaves de la
+   paleta. Negro sobre blanco (21:1) y bordes gruesos y oscuros: aqui la
+   forma pesa mas que el color, que es justo lo que se necesita cuando el
+   color no llega.
+   --------------------------------------------------------------------- */
+[data-tema="alto-contraste"] {
+  --bg-app:        #FFFFFF;
+  --bg-surface:    #FFFFFF;
+  --bg-sidebar:    #000000;
+  --bg-subtle:     #E8E8E8;
+
+  --text-strong:   #000000;      /* 21:1 */
+  --text-body:     #000000;
+  --text-muted:    #3A3A3A;      /* 11.6:1 -- sigue siendo texto, no adorno */
+  --text-on-dark:  #FFFFFF;
+
+  --border:        #000000;
+  --border-strong: #000000;
+
+  --focus-ring:         #0033CC;
+  --focus-ring-on-dark: #FFDD00;
+
+  --error-text:    #A60000;      /*  7.9:1 */
+  --error-bg:      #FFE8E8;
+  --error-border:  #A60000;
+  --ok-text:       #005C2E;      /*  7.5:1 */
+  --ok-bg:         #E4F5EA;
+  --ok-border:     #005C2E;
+
+  --score-priority: #A60000;
+  --score-urgency:  #00308F;
+  --score-timefit:  #005C2E;
 }
 
 /* Quien pidio menos movimiento en su sistema operativo, lo pidio en serio. */

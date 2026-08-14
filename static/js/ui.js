@@ -146,4 +146,49 @@
         .catch(function () { /* sin red: el servidor lo valida igual al enviar */ });
     });
   }
+  /* -------------------------------------------------------------------
+     Apariencia: tema de color
+     El <head> ya aplico el tema guardado antes de pintar; esto solo maneja
+     el cambio en vivo desde el panel.
+     ------------------------------------------------------------------- */
+  var CLAVE_TEMA = "vibeplanner-tema";
+  var TEMAS = ["claro", "oscuro", "alto-contraste"];
+
+  function aplicarTema(tema) {
+    // Lista blanca. Lo que llega de localStorage acaba en un atributo del
+    // <html>, y eso lo puede haber escrito cualquier script de la pagina.
+    if (TEMAS.indexOf(tema) === -1) tema = "claro";
+
+    if (tema === "claro") {
+      document.documentElement.removeAttribute("data-tema");
+    } else {
+      document.documentElement.setAttribute("data-tema", tema);
+    }
+    try { localStorage.setItem(CLAVE_TEMA, tema); } catch (e) { /* sin almacenamiento */ }
+  }
+
+  function temaActual() {
+    return document.documentElement.getAttribute("data-tema") || "claro";
+  }
+
+  var selector = document.querySelector("[data-selector-tema]");
+  if (selector) {
+    // Marcar el que esta puesto: si el panel abriera siempre en "Claro",
+    // diria una cosa distinta de lo que se ve en la pantalla.
+    var actual = selector.querySelector('input[value="' + temaActual() + '"]');
+    if (actual) actual.checked = true;
+
+    selector.addEventListener("change", function (evento) {
+      if (evento.target.name === "tema") aplicarTema(evento.target.value);
+    });
+  }
+
+  var botonRestablecer = document.querySelector("[data-restablece-tema]");
+  if (botonRestablecer) {
+    botonRestablecer.addEventListener("click", function () {
+      aplicarTema("claro");
+      var claro = document.querySelector('[data-selector-tema] input[value="claro"]');
+      if (claro) claro.checked = true;
+    });
+  }
 })();

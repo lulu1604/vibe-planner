@@ -763,3 +763,65 @@
   .habito-rejilla  { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
   .metrica-rejilla { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
 }
+
+/* =====================================================================
+   13. SELECTOR DE TEMA  (panel de Apariencia)
+   ===================================================================== */
+.muestra-tema {
+  display: inline-flex; gap: 3px;
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
+.muestra-tema span {
+  width: 14px; height: 14px;
+  border-radius: var(--radius-sm);
+  /* Borde propio: sin el, la muestra blanca del tema de alto contraste
+     desaparece sobre una superficie blanca. */
+  border: 1px solid var(--border-strong);
+}
+
+/* =====================================================================
+   14. AJUSTES DEL TEMA OSCURO
+   ---------------------------------------------------------------------
+   Casi todo el CSS usa roles semanticos y cambia de tema solo. Pero
+   quedan sitios que nombran un color de PALETA como texto -- sobre todo
+   `color: var(--navy)` sobre `--bg-subtle` -- y en oscuro eso es oscuro
+   sobre oscuro: ilegible.
+
+   No se arregla remapeando `--navy` en el tema, porque ese mismo token es
+   el FONDO de `.btn--primary:hover`: aclararlo dejaria texto blanco sobre
+   fondo claro. Asi que se corrigen los pares concretos, aqui y no en el
+   componente, para que el tema claro no se toque.
+
+   Ratios medidos sobre sus fondos reales, todos >= 4.5:1.
+   ===================================================================== */
+[data-tema="oscuro"] .btn--secondary        { color: var(--text-body); }
+[data-tema="oscuro"] .btn--secondary:hover,
+[data-tema="oscuro"] .btn--ghost:hover,
+[data-tema="oscuro"] .modal-cerrar:hover,
+[data-tema="oscuro"] .menu-cuenta-item:hover { color: var(--text-strong); }
+
+[data-tema="oscuro"] .btn--danger,
+[data-tema="oscuro"] .btn--danger:hover,
+[data-tema="oscuro"] .menu-cuenta-item--salir,
+[data-tema="oscuro"] .menu-cuenta-item--salir:hover { color: var(--error-text); }
+[data-tema="oscuro"] .btn--danger:hover,
+[data-tema="oscuro"] .menu-cuenta-item--salir:hover { background: var(--error-bg); }
+
+[data-tema="oscuro"] .alert--ok    { color: var(--ok-text); }
+[data-tema="oscuro"] .alert--error { color: var(--error-text); }
+[data-tema="oscuro"] .alert--info  { color: var(--text-body); }
+
+[data-tema="oscuro"] .badge--rol-usuario,
+[data-tema="oscuro"] .badge--activa    { color: var(--text-body); }
+[data-tema="oscuro"] .badge--rol-admin { background: var(--error-bg); color: var(--error-text); }
+
+/* El campo con error forzaba un fondo casi blanco con color-mix sobre
+   --white: en oscuro eso es un rectangulo blanco en mitad del formulario. */
+[data-tema="oscuro"] .field-control[aria-invalid="true"] {
+  background: var(--error-bg);
+}
+
+/* accent-color pinta el punto del radio y la marca del check. En oscuro el
+   --teal-700 sobre superficie oscura casi no se distingue. */
+[data-tema="oscuro"] .casilla input { accent-color: var(--focus-ring); }
