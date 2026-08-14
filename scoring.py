@@ -23,11 +23,7 @@ FÓRMULA (especificada en Elaboration, NO improvisar):
 
 from datetime import datetime, timezone, timedelta
 
-try:
-    from zoneinfo import ZoneInfo
-    TZ = ZoneInfo("America/Lima")
-except Exception:
-    TZ = timezone(timedelta(hours=-5))
+import fechas
 
 PRIORITY_POINTS = {1: 50, 2: 30, 3: 10}
 PRIORITY_LABEL = {1: "Alta", 2: "Media", 3: "Baja"}
@@ -35,7 +31,16 @@ TIME_FIT_BONUS = 15
 
 
 def today_local():
-    return datetime.now(TZ).date()
+    """
+    Hoy en Lima. Delega en fechas.py, que es la fuente unica.
+
+    Habia tres copias de esta misma regla -- aqui, en metrics.py y en
+    fechas.py -- cada una con su propio try/except de ZoneInfo. Hoy las tres
+    coincidian, pero tres definiciones de "que dia es" es como se acaba con dos
+    pantallas discrepando sobre si una racha se rompio.
+    La firma no cambia: sigue devolviendo un `date`.
+    """
+    return fechas.hoy_local()
 
 
 def calculate_score(task, available_minutes):

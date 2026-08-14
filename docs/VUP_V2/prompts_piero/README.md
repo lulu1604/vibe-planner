@@ -40,7 +40,7 @@ está terminado y probado.
 | Paso | Qué construyes | Prompt | Listo cuando |
 |---|---|---|---|
 | **P0** | Preparación: venv, estructura, `tokens.css`, fuentes | *(manual, ver abajo)* | `flask --version` responde y la estructura existe |
-| **P1** | Modelo de identidad: esquema + `database.py` + `repo_users.py` + `seed.py` | `P1_modelo_identidad.md` | `python seed.py` crea 23 permisos, 2 roles y el admin |
+| **P1** | Modelo de identidad: esquema + `database.py` + `repo_users.py` + `seed.py` | `P1_modelo_identidad.md` | `python seed.py` crea 24 permisos, 2 roles y el admin |
 | **P2** | La guardia: `security.py` | `P2_guardia_security.md` | Un usuario con 2 roles devuelve la unión de permisos |
 | **P3** | Login, registro y logout **con su UI** | `P3_auth_login_registro.md` | Me registro, entro, salgo y vuelvo a entrar |
 | **P4** | Home con menú de módulos (shell responsive) | `P4_home_menu.md` | El menú muestra solo lo que mis permisos permiten |

@@ -76,6 +76,20 @@ MODULOS = [
         "icono": "M3 20.25h18M7.5 20.25V12M12 20.25V6.75M16.5 20.25v-6",
     },
     {
+        # Estaba construida y no la enlazaba NADIE: solo se llegaba escribiendo
+        # la URL. Y `planner.ver` lo tiene el rol `usuario`, asi que era
+        # inalcanzable para el 100 % de las cuentas.
+        "clave": "equipo",
+        "etiqueta": "Equipo",
+        "descripcion": "Las actividades que asignaste a otras personas.",
+        "permiso": "tarea.asignar",
+        "endpoint": "planner.equipo_tareas",
+        "icono": ("M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72M18 18.72"
+                  "a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75"
+                  "a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477"
+                  "m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"),
+    },
+    {
         "clave": "admin",
         "etiqueta": "Administracion",
         "descripcion": "Cuentas del sistema, roles y permisos.",
@@ -86,6 +100,16 @@ MODULOS = [
                   " 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07"
                   "M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0zm8.25 2.25a2.625 2.625"
                   " 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0z"),
+    },
+    {
+        # Idem: terminada y sin enlace. El permiso la reserva al administrador.
+        "clave": "metricas_sistema",
+        "etiqueta": "Metricas del sistema",
+        "descripcion": "Cuanta gente usa la aplicacion y cuanto se completa.",
+        "permiso": "metrica.sistema.ver",
+        "endpoint": "habitos.metricas_sistema",
+        "icono": ("M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22"
+                  "m0 0-5.94-2.281m5.94 2.28-2.28 5.941"),
     },
     {
         "clave": "perfil",

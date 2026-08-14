@@ -140,7 +140,7 @@ python seed.py
 Tiene que imprimir:
 
 ```
-  23 permisos sembrados
+  24 permisos sembrados
   2 roles sembrados (usuario, admin)
   administrador 'admin' creado (id 1)
   permisos efectivos del administrador: 23 (union de sus dos roles)
@@ -292,3 +292,14 @@ nadie sabrá explicar. Como es idempotente, ejecutarlo de más nunca hace daño.
   administrador la restablece desde el panel de gestión de usuarios.
 - Activa **Force HTTPS** en la pestaña Web. Sin eso, la cookie de sesión viaja en
   claro — lo dejó anotado el informe de seguridad de la v1.
+
+  > ⚠️ **Force HTTPS y `VIBEPLANNER_SECRET` van juntos, no por separado.**
+  > La aplicación marca la cookie como `Secure` **solo si existe la variable
+  > `VIBEPLANNER_SECRET`** (`config.py`). Está condicionado a propósito: con
+  > `Secure` siempre activo, el navegador no devolvería la cookie sobre
+  > `http://127.0.0.1:5000` y nadie podría iniciar sesión en local — el síntoma
+  > sería "el login no hace nada", que cuesta media tarde diagnosticar.
+  >
+  > Es decir: si defines la variable pero **no** activas Force HTTPS, la primera
+  > petición sigue saliendo en claro. Si activas Force HTTPS pero **no** defines
+  > la variable, la cookie sale sin `Secure`. Hacen falta las dos.

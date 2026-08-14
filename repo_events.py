@@ -24,6 +24,11 @@ import sqlite3
 import database
 
 
+# Marca de las filas que solo registran "esta persona asiste", frente a las que
+# son un enlace de invitacion de verdad. Ver get_event_by_token.
+PREFIJO_ASISTENCIA = "asistencia:"
+
+
 def _dict_from_row(row):
     return dict(row) if row else None
 
@@ -182,6 +187,13 @@ def get_event_by_token(token):
     Devuelve los datos del evento asociado a una invitación activa por token.
     Si la invitación no existe o está revocada, devuelve None.
     """
+    # Las filas de asistencia llevan un token sintético `asistencia:evento:user`
+    # solo porque la columna es UNIQUE NOT NULL. Ese valor es ADIVINABLE -- son
+    # dos enteros pequeños -- así que se descarta aquí: no es un enlace de
+    # invitación y no puede comportarse como si lo fuera.
+    if not token or token.startswith(PREFIJO_ASISTENCIA):
+        return None
+
     db = database.get_db()
     sql = """
         SELECT e.id AS event_id, e.title, e.description, e.start_at, e.end_at, e.color,
@@ -236,11 +248,20 @@ def accept_invitation(token, user_id):
             (user_id, inv["id"])
         )
     else:
-        # Si la invitación ya fue usada por otro pero el nuevo entra por el mismo link, crea la relación
+        # La invitacion original ya la uso otra persona. Se guarda la
+        # asistencia de esta con un token PROPIO E INSERVIBLE, no con uno nuevo
+        # de `token_urlsafe`.
+        #
+        # Antes se acunaba un token valido en cada aceptacion: cada persona que
+        # entraba por el link generaba otro link vivo que nadie habia decidido
+        # crear, y el numero de accesos validos crecia solo. La columna es
+        # UNIQUE NOT NULL, asi que hace falta un valor: se usa uno con prefijo
+        # marcado, imposible de adivinar como enlace porque no es un token.
         try:
             db.execute(
-                "INSERT INTO event_invitations (event_id, token, invited_user_id, status) VALUES (?, ?, ?, 'accepted')",
-                (event_id, secrets.token_urlsafe(32), user_id)
+                "INSERT INTO event_invitations (event_id, token, invited_user_id, status) "
+                "VALUES (?, ?, ?, 'accepted')",
+                (event_id, "%s%d:%d" % (PREFIJO_ASISTENCIA, event_id, user_id), user_id)
             )
         except sqlite3.IntegrityError:
             pass

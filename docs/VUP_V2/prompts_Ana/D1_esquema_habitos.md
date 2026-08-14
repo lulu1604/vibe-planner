@@ -120,7 +120,7 @@ sqlite3 vibe_planner.db ".schema habits"
 sqlite3 vibe_planner.db ".schema habit_logs"
 ```
 
-- [ ] `python seed.py` corre sin error y sigue diciendo "23 permisos sembrados"
+- [ ] `python seed.py` corre sin error y sigue diciendo "24 permisos sembrados"
 - [ ] `.schema habits` muestra el `CHECK` de los cinco tipos
 - [ ] `.schema habit_logs` muestra `UNIQUE (habit_id, log_date)`
 - [ ] `git diff schema_v2.sql` muestra **solo** líneas añadidas al final

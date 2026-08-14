@@ -19,6 +19,7 @@ atraparía en `_url_o_none` y las dos entradas del menú aparecerían apagadas c
 no las renombres.
 """
 
+import math
 from datetime import date, timedelta
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -206,6 +207,13 @@ def registrar(habit_id):
     try:
         valor = float(request.form.get("value", 0) or 0)
     except ValueError:
+        flash("El valor del día debe ser un número. Por ejemplo: 8.", "error")
+        return redirect(url_for("habitos.lista"))
+
+    # 'nan' e 'inf' pasan por float() sin protestar, y NaN atraviesa las dos
+    # comparaciones de rango de abajo porque cualquier comparación con NaN es
+    # False. Terminaba guardado como NULL y la plantilla imprimía value="None".
+    if not math.isfinite(valor):
         flash("El valor del día debe ser un número. Por ejemplo: 8.", "error")
         return redirect(url_for("habitos.lista"))
 

@@ -26,15 +26,21 @@ from datetime import datetime
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
 import repo_tasks
+import repo_users
 import scoring
 import security
+import validators
 from repo_tasks import KANBAN_COLUMNS
 
 planner = Blueprint("planner", __name__, url_prefix="")
 
 # Columnas validas: fuente unica de verdad importada de repo_tasks.py
 _TODAY_FMT = "%Y-%m-%d"
-MAX_TITLE_LEN = 120
+_HORA_FMT = "%H:%M"
+# El tope de titulo sale de validators.py, que es la fuente unica de los tres
+# modulos. Antes cada uno tenia el suyo y no coincidian.
+MAX_TITLE_LEN = validators.TITULO_MAX
+MAX_DESC_LEN = validators.DESCRIPCION_MAX
 MAX_MINUTES = 480   # 8 horas: maximo razonable para una tarea
 
 
@@ -72,24 +78,59 @@ def _validar_tarea(form):
     elif minutos > MAX_MINUTES:
         errores.append(f"La duracion no puede superar {MAX_MINUTES} minutos.")
 
-    prioridad = form.get("priority_level", 2, type=int)
+    # Sin valor por defecto: `form.get("priority_level", 2, type=int)` devuelve
+    # 2 cuando el texto no es un entero, asi que 'x', 'alta' y '2.5' se
+    # guardaban como Media SIN avisar. Ahora un valor no numerico da None y se
+    # rechaza igual que uno fuera de rango.
+    prioridad = form.get("priority_level", type=int)
+    if prioridad is None:
+        prioridad = 2 if not (form.get("priority_level") or "").strip() else None
     if prioridad not in (1, 2, 3):
         errores.append("La prioridad debe ser Alta (1), Media (2) o Baja (3).")
+
+    # Las horas son opcionales, pero si vienen tienen que ser horas. Antes se
+    # guardaban '25:99' y 'abc' tal cual, y luego se pintaban en la pantalla.
+    inicio = _parsear_hora(form.get("start_time"), "de inicio", errores)
+    fin = _parsear_hora(form.get("end_time"), "de fin", errores)
+    if inicio and fin and fin <= inicio:
+        errores.append("La hora de fin debe ser posterior a la de inicio.")
+
+    # Lista blanca contra la fuente unica de repo_tasks. Sin esto, un valor
+    # fuera de rango llegaba al CHECK del esquema y salia un 500 crudo.
+    columna = (form.get("kanban_column") or "todo").strip()
+    if columna not in KANBAN_COLUMNS:
+        errores.append("Esa columna del tablero no existe.")
+
+    descripcion = (form.get("description") or "").strip()
+    if len(descripcion) > MAX_DESC_LEN:
+        errores.append(f"La descripcion no puede pasar de {MAX_DESC_LEN} caracteres.")
 
     if errores:
         return None, errores
 
     return {
         "title": titulo,
-        "description": (form.get("description") or "").strip()[:500],
+        "description": descripcion,
         "category": (form.get("category") or "General").strip()[:40] or "General",
         "priority_level": prioridad,
         "due_date": fecha,
         "estimated_minutes": minutos,
-        "start_time": (form.get("start_time") or "").strip() or None,
-        "end_time": (form.get("end_time") or "").strip() or None,
-        "kanban_column": form.get("kanban_column", "todo"),
+        "start_time": inicio,
+        "end_time": fin,
+        "kanban_column": columna,
     }, []
+
+
+def _parsear_hora(valor, etiqueta, errores):
+    """Devuelve 'HH:MM' normalizado, None si no vino, o anota el error."""
+    texto = (valor or "").strip()
+    if not texto:
+        return None
+    try:
+        return datetime.strptime(texto, _HORA_FMT).strftime(_HORA_FMT)
+    except ValueError:
+        errores.append(f"La hora {etiqueta} no es valida. Usa el formato HH:MM.")
+        return None
 
 
 # --------------------------------------------------------------------------
@@ -140,12 +181,31 @@ def crear_tarea():
     owner_id = user_id
     assigned_by = None
     assigned_to = request.form.get("assigned_to", type=int)
-    if assigned_to and security.has_permission("tarea.asignar"):
+
+    if assigned_to:
+        if not security.has_permission("tarea.asignar"):
+            # Antes se descartaba en silencio y el flash decia "Actividad
+            # creada.": la tarea aparecia en el planner de quien la escribio y
+            # nadie entendia por que no le habia llegado a la otra persona.
+            flash("No puedes asignar actividades a otras personas.", "error")
+            return redirect(url_for("planner.dia"))
+
+        # Que exista Y este activa. Un id inexistente reventaba con un 500 por
+        # la clave foranea, y uno desactivado mandaba la tarea a un agujero
+        # negro: a un buzon al que nadie puede entrar.
+        destinatario = repo_users.get_by_id(assigned_to)
+        if destinatario is None or not destinatario["is_active"]:
+            flash("Esa cuenta no existe o esta desactivada.", "error")
+            return redirect(url_for("planner.dia"))
+
         owner_id = assigned_to
         assigned_by = user_id
 
     repo_tasks.create(datos, owner_id, assigned_by)
-    flash("Actividad creada.", "ok")
+    if assigned_by:
+        flash("Actividad asignada a %s." % destinatario["username"], "ok")
+    else:
+        flash("Actividad creada.", "ok")
     return redirect(url_for("planner.dia"))
 
 
@@ -186,7 +246,12 @@ def eliminar_tarea(task_id):
 @security.requires("kanban.mover")
 def mover_columna(task_id):
     user_id = security.current_user_id()
-    column = (request.form.get("column") or request.json and request.json.get("column") or "").strip()
+    # `request.json` lanza 415 si el Content-Type no es JSON, asi que una
+    # peticion sin el campo `column` daba un 415 crudo en vez del 400 con
+    # mensaje que documenta el modulo. `silent=True` devuelve None en vez de
+    # reventar.
+    cuerpo = request.get_json(silent=True) or {}
+    column = (request.form.get("column") or cuerpo.get("column") or "").strip()
 
     if column not in KANBAN_COLUMNS:
         abort(400, description=f"Columna '{column}' no valida. Usa: {', '.join(KANBAN_COLUMNS)}.")

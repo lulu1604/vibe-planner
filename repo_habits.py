@@ -24,6 +24,8 @@ aparecen en un SQL de escritura. La racha NO se calcula aquí: es lógica de
 negocio y vive en `metrics.py`.
 """
 
+import math
+
 import database
 
 TIPOS_VALIDOS = ("dieta", "ejercicio", "relajacion", "sueno", "general")
@@ -188,6 +190,11 @@ def _validar(data):
     try:
         meta = float(data.get("target_value", 1))
     except (TypeError, ValueError):
+        raise ValueError("La meta debe ser un número. Por ejemplo: 8 horas.")
+    # float() acepta 'nan' e 'inf', y NaN atraviesa las comparaciones de rango:
+    # `nan <= 0` y `nan > META_MAXIMA` son las dos False, así que pasaba los dos
+    # filtros y acababa guardado como NULL. En pantalla se leía "Meta: 0".
+    if not math.isfinite(meta):
         raise ValueError("La meta debe ser un número. Por ejemplo: 8 horas.")
     if meta <= 0:
         raise ValueError("La meta debe ser mayor que 0. Por ejemplo: 8 horas.")

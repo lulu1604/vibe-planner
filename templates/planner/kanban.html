@@ -204,6 +204,10 @@
   <script>
     // Token CSRF para las peticiones fetch del kanban.js
     const CSRF_TOKEN = "{{ csrf_token() }}";
+    {# Plantilla de URL con id 0; kanban.js sustituye el 0 por el id real.
+       Emitirla con url_for es lo que impide que el JS y la ruta se
+       desincronicen, que es lo que ya paso una vez con el prefijo /v2. #}
+    const MOVER_URL = "{{ url_for('planner.mover_columna', task_id=0) }}";
   </script>
   <script src="{{ url_for('static', filename='js/kanban.js') }}" defer></script>
 {% endblock %}

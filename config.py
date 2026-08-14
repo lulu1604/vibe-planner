@@ -20,6 +20,19 @@ SECRET_KEY = os.environ.get("VIBEPLANNER_SECRET", "dev-only-no-usar-en-produccio
 SESSION_COOKIE_HTTPONLY = True   # JavaScript no puede leer la cookie de sesion
 SESSION_COOKIE_SAMESITE = "Lax"  # el navegador no la manda en peticiones de otro sitio
 
+# La cookie de sesion NO viaja por http. Es una credencial completa: quien la
+# copia entra al panel de administracion sin contrasena.
+#
+# Condicionado a VIBEPLANNER_SECRET y no fijado a True porque True a secas
+# rompe en SILENCIO todo el desarrollo local: sobre http://127.0.0.1:5000 el
+# navegador aceptaria la cookie pero no la devolveria, asi que nadie podria
+# iniciar sesion y el sintoma seria "el login no hace nada".
+#
+# La variable solo existe en produccion (panel de PythonAnywhere), asi que la
+# proteccion se enciende exactamente donde hay HTTPS. Va de la mano con activar
+# "Force HTTPS" en el panel: sin las dos, la primera peticion sale en claro.
+SESSION_COOKIE_SECURE = bool(os.environ.get("VIBEPLANNER_SECRET"))
+
 # --------------------------------------------------------------------------
 # Contrasenas
 # --------------------------------------------------------------------------

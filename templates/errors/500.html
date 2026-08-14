@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Algo se rompio · VibePlanner{% endblock %}
+{% block encabezado %}Algo se rompio de nuestro lado{% endblock %}
+
+{% block content %}
+  {#
+    La red de seguridad de app.py. Nunca se muestra el detalle tecnico: la traza
+    va al log del servidor y aqui solo se dice que paso y que puede hacer la
+    persona. Una traza de Python en pantalla filtra rutas de archivos, nombres
+    de tablas y a veces datos, y a quien la lee no le sirve de nada.
+  #}
+  <div class="card">
+    <p style="margin-bottom:var(--space-4);">
+      No fue culpa tuya. El error quedo registrado y tus datos no se han perdido:
+      lo ultimo que guardaste sigue ahi.
+    </p>
+    <div class="btn-fila">
+      <a class="btn btn--primary" href="{{ url_for('home.index') }}">Volver al inicio</a>
+      <button class="btn btn--secondary" type="button" onclick="history.back()">
+        Volver atras
+      </button>
+    </div>
+  </div>
+{% endblock %}
