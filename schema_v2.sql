@@ -119,3 +119,38 @@ WHEN NEW.updated_at = OLD.updated_at
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
+
+
+-- ---------------------------------------------------------------------
+-- 9. MODULO D: habitos y registro diario  (Ana Cusi)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS habits (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL,
+    name         TEXT    NOT NULL,
+    habit_type   TEXT    NOT NULL DEFAULT 'general',
+    target_value REAL    DEFAULT 1,
+    unit         TEXT    DEFAULT 'vez',      -- 'horas' | 'minutos' | 'vasos' | 'vez'
+    is_active    INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- 'sueno' va sin tilde a proposito: una tilde en un valor de la base rompe
+    -- la codificacion en PythonAnywhere y el CHECK deja de coincidir con lo que
+    -- manda el formulario. En pantalla se muestra "Sueno" con tilde.
+    CHECK (habit_type IN ('dieta','ejercicio','relajacion','sueno','general')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS habit_logs (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    habit_id INTEGER NOT NULL,
+    log_date TEXT    NOT NULL,               -- 'YYYY-MM-DD'
+    value    REAL    DEFAULT 0,
+    done     INTEGER NOT NULL DEFAULT 0 CHECK (done IN (0, 1)),
+    -- Corregir el registro de hoy actualiza la fila, nunca crea una segunda:
+    -- la garantia vive en la base, no en un if de Python (TC-34).
+    UNIQUE (habit_id, log_date),
+    FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_habits_user     ON habits(user_id);
+CREATE INDEX IF NOT EXISTS ix_habit_logs_date ON habit_logs(habit_id, log_date);

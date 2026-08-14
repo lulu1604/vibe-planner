@@ -547,3 +547,133 @@
 .fila-entre { display: flex; align-items: center; justify-content: space-between;
               gap: var(--space-3); flex-wrap: wrap; }
 .sin-margen { margin: 0; }
+
+/* =====================================================================
+   12. MODULO D - HABITOS Y METRICAS  (Ana Cusi)
+   Movil primero: el CSS base es el de 360 px y los @media (min-width)
+   van anadiendo. Ningun hex suelto: todo sale de tokens.css.
+   ===================================================================== */
+.habito-grupo { margin-bottom: var(--space-8); }
+
+.habito-grupo-titulo {
+  font-size: var(--text-lg);
+  color: var(--text-strong);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Una columna en movil. La rejilla solo aparece cuando hay sitio de verdad. */
+.habito-rejilla { display: grid; gap: var(--space-4); grid-template-columns: 1fr; }
+
+.tarjeta-habito {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+}
+
+/* La racha es el dato que se busca de un vistazo: cifra grande y en la fuente
+   de datos, que alinea los digitos y no baila entre 9 y 10. */
+.habito-racha { display: flex; align-items: baseline; gap: var(--space-2); }
+
+.racha-cifra {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--teal-700);
+  line-height: 1;
+}
+
+.racha-texto { color: var(--text-muted); font-size: var(--text-sm); }
+
+/* Insignias de estado del dia. Llevan texto ademas del color, asi que el color
+   es refuerzo y no la unica senal. */
+.badge--marcado    { background: var(--ok-bg);     color: var(--ok-text);
+                     border-color: var(--ok-border); }
+.badge--sin-marcar { background: var(--bg-subtle); color: var(--taupe);
+                     border-color: var(--border-strong); }
+
+/* --- Los ultimos 7 dias ------------------------------------------------ */
+.semana { display: flex; gap: var(--space-1); list-style: none; padding: 0; margin: 0; }
+
+.dia-casilla {
+  flex: 1 1 0;
+  min-width: 0;
+  /* 44 px es el objetivo tactil minimo: por debajo, marcar el dia correcto en
+     un movil se convierte en loteria. */
+  min-height: var(--touch-min);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* Cumplido se distingue por RELLENO y por BORDE, no solo por color: en escala
+   de grises un relleno teal y uno gris claro se parecen demasiado (TC-45). */
+.dia-casilla--cumplido {
+  background: var(--teal-700);
+  color: var(--text-on-dark);
+  border-color: var(--teal-700);
+}
+
+.dia-casilla--hoy { outline: 2px solid var(--navy); outline-offset: 1px; }
+
+/* --- Control del dia --------------------------------------------------- */
+.habito-control {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.habito-control .field-etiqueta { flex: 1 0 100%; margin: 0; }
+
+/* Los campos nunca bajan de 16 px: por debajo, iOS hace zoom al enfocarlos y
+   descoloca la pantalla entera. */
+.habito-valor { flex: 1 1 6rem; min-width: 5rem; font-size: var(--text-base); }
+
+.nuevo-habito { margin-top: var(--space-6); padding: var(--space-4); }
+.nuevo-habito > summary { cursor: pointer; min-height: var(--touch-min);
+                          display: flex; align-items: center; }
+
+/* --- Metricas (D5) ----------------------------------------------------- */
+.metrica-principal { text-align: center; padding: var(--space-6) var(--space-4); }
+
+.metrica-cifra {
+  display: block;
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--teal-700);
+  line-height: 1;
+}
+
+.metrica-fraccion { color: var(--text-muted); font-size: var(--text-sm); }
+
+.metrica-rejilla { display: grid; gap: var(--space-4); grid-template-columns: 1fr;
+                   margin-top: var(--space-4); }
+
+.metrica-tarjeta {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.metrica-tarjeta h3 { font-size: var(--text-base); margin: 0 0 var(--space-2); }
+
+/* Los habitos van en un bloque visualmente separado del porcentaje de tareas:
+   son dos indicadores distintos y mezclarlos hace que el numero deje de
+   significar nada (TC-39). */
+.bloque-habitos { border-left: 4px solid var(--rose); margin-top: var(--space-6); }
+
+.navegacion-fecha { display: flex; align-items: center; justify-content: space-between;
+                    gap: var(--space-2); margin-bottom: var(--space-4); }
+
+@media (min-width: 600px) {
+  .habito-rejilla  { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+  .metrica-rejilla { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+}

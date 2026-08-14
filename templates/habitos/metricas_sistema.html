@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% set seccion_activa = "admin" %}
+
+{#
+  BLOQUES CONGELADOS: title · encabezado · subtitulo · acciones · content.
+
+  🔒 REGLA DE ESTA PANTALLA: aqui NO se pinta el contenido de nadie. Ni titulos
+  de tareas, ni nombres de eventos, ni correos, ni "los 5 usuarios mas activos"
+  -- tampoco escondido en un data- o en un comentario HTML "por si acaso"
+  (TC-41). Solo salen las cinco cifras de metrics.system_metrics().
+
+  Es una decision de producto, no una limitacion tecnica: administrar el
+  sistema es saber cuanto se usa, no leer la vida privada de las personas.
+#}
+{% block title %}Métricas del sistema — VibePlanner{% endblock %}
+{% block encabezado %}Métricas del sistema{% endblock %}
+{% block subtitulo %}
+  <p class="text-muted">Cuánto se usa VibePlanner. Solo cifras agregadas.</p>
+{% endblock %}
+
+{% block acciones %}
+  <a class="btn btn--secondary" href="{{ url_for('admin.usuarios') }}">Cuentas</a>
+{% endblock %}
+
+{% block content %}
+
+  <div class="metrica-rejilla">
+
+    <section class="metrica-tarjeta">
+      <h3>Cuentas registradas</h3>
+      <span class="text-data metrica-cifra">{{ metricas.usuarios_total }}</span>
+      <p class="text-muted">Todas las cuentas, activas o no.</p>
+    </section>
+
+    <section class="metrica-tarjeta">
+      <h3>Cuentas activas</h3>
+      <span class="text-data metrica-cifra">{{ metricas.usuarios_activos }}</span>
+      <p class="text-muted">Pueden iniciar sesión ahora mismo.</p>
+    </section>
+
+    <section class="metrica-tarjeta">
+      <h3>Eventos creados</h3>
+      <span class="text-data metrica-cifra">{{ metricas.eventos_total }}</span>
+      <p class="text-muted">En todo el histórico.</p>
+    </section>
+
+    <section class="metrica-tarjeta">
+      <h3>Hábitos activos</h3>
+      <span class="text-data metrica-cifra">{{ metricas.habitos_total }}</span>
+      <p class="text-muted">Rutinas que la gente sigue.</p>
+    </section>
+
+    <section class="metrica-tarjeta">
+      <h3>Usaron la app hoy</h3>
+      <span class="text-data metrica-cifra">{{ metricas.usaron_hoy }}</span>
+      <p class="text-muted">Personas distintas con actividad hoy.</p>
+    </section>
+
+  </div>
+
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "components/_field.html" import campo %}
+
+{# Marca la entrada "Habitos" del menu con aria-current. La clave coincide con
+   la que declara home.py. #}
+{% set seccion_activa = "habitos" %}
+
+{#
+  BLOQUES CONGELADOS: title · encabezado · subtitulo · acciones · content.
+  Escribir `titulo` o `contenido` deja esta pagina EN BLANCO sin ningun error.
+#}
+{% block title %}Hábitos — VibePlanner{% endblock %}
+{% block encabezado %}Mis hábitos{% endblock %}
+{% block subtitulo %}
+  <p class="text-muted">Tus rachas de sueño, ejercicio y alimentación.</p>
+{% endblock %}
+
+{% block acciones %}
+  <a class="btn btn--primary" href="#nuevo-habito">Nuevo hábito</a>
+{% endblock %}
+
+{% block content %}
+
+  {% if total_habitos == 0 %}
+    <div class="estado-vacio">
+      <h3>Aún no sigues ningún hábito</h3>
+      <p>Empieza por uno: dormir, ejercicio o alimentación.</p>
+      <a class="btn btn--secondary" href="#nuevo-habito">Crear el primero</a>
+    </div>
+  {% else %}
+    {% for grupo in grupos %}
+      <section class="habito-grupo" aria-labelledby="grupo-{{ grupo.tipo }}">
+        <h2 class="habito-grupo-titulo" id="grupo-{{ grupo.tipo }}">{{ grupo.etiqueta }}</h2>
+        <div class="habito-rejilla">
+          {% for habito in grupo.habitos %}
+            {% include "habitos/_tarjeta_habito.html" %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  {% endif %}
+
+  {# El formulario de alta se abre solo cuando aun no hay habitos: es lo unico
+     que se puede hacer en esa pantalla, y esconderlo tras un clic sobra. #}
+  <details class="card nuevo-habito" id="nuevo-habito"
+           {% if total_habitos == 0 %}open{% endif %}>
+    <summary class="card-titulo">Nuevo hábito</summary>
+
+    <form method="post" action="{{ url_for('habitos.crear') }}" class="pila-4">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      {{ campo("name",
+               {"etiqueta": "Nombre del hábito",
+                "max": 80,
+                "ayuda": "Por ejemplo: Dormir 8 horas"}) }}
+
+      <div class="field">
+        <label class="field-etiqueta" for="campo-habit_type">Tipo</label>
+        {# Lista cerrada: el tipo no se escribe a mano, se elige. Es la misma
+           lista que valida el CHECK de la base y repo_habits.create(). #}
+        <select class="field-control" id="campo-habit_type" name="habit_type">
+          {% for codigo, etiqueta in tipos %}
+            <option value="{{ codigo }}">{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-etiqueta" for="campo-target_value">Meta diaria</label>
+        <input class="field-control" id="campo-target_value" name="target_value"
+               type="number" inputmode="decimal" min="0.1" max="1000" step="any"
+               value="1" required
+               aria-describedby="campo-target_value-ayuda">
+        <span class="field-ayuda" id="campo-target_value-ayuda">
+          Cuánto cuenta como cumplido. Por ejemplo: 8.
+        </span>
+      </div>
+
+      <div class="field">
+        <label class="field-etiqueta" for="campo-unit">Unidad</label>
+        <select class="field-control" id="campo-unit" name="unit">
+          {% for unidad in unidades %}
+            <option value="{{ unidad }}">{{ unidad }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="btn-fila">
+        <button class="btn btn--primary" type="submit">Crear hábito</button>
+      </div>
+    </form>
+  </details>
+
+{% endblock %}

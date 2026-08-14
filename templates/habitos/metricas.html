@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% set seccion_activa = "metricas" %}
+
+{#
+  BLOQUES CONGELADOS: title · encabezado · subtitulo · acciones · content.
+
+  Esta plantilla NO calcula nada. El unico calculo permitido en todo el archivo
+  es el `width` de las barras, que es una propiedad de presentacion: los
+  porcentajes ya vienen resueltos desde metrics.daily_summary().
+#}
+{% block title %}Métricas — VibePlanner{% endblock %}
+{% block encabezado %}Cómo me fue{% endblock %}
+{% block subtitulo %}
+  <p class="text-muted">{{ fecha_legible }}</p>
+{% endblock %}
+
+{% block content %}
+
+  <nav class="navegacion-fecha" aria-label="Cambiar de día">
+    <a class="btn btn--secondary btn--sm"
+       href="{{ url_for('habitos.metricas', fecha=dia_anterior) }}">← Día anterior</a>
+
+    {% if es_hoy %}
+      {# El futuro no tiene metricas que enseñar. El boton se desactiva de
+         verdad (aria-disabled + sin href) en vez de solo pintarse gris. #}
+      <span class="btn btn--ghost btn--sm" aria-disabled="true">Día siguiente →</span>
+    {% else %}
+      <a class="btn btn--secondary btn--sm"
+         href="{{ url_for('habitos.metricas') }}">Hoy</a>
+      <a class="btn btn--secondary btn--sm"
+         href="{{ url_for('habitos.metricas', fecha=dia_siguiente) }}">Día siguiente →</a>
+    {% endif %}
+  </nav>
+
+  {% if not resumen.tareas_conectadas %}
+    {# Decir la verdad en vez de pintar un 0 % que parece un dato real. #}
+    <div class="alert alert--info">
+      El módulo de actividades aún no está conectado, así que todavía no
+      podemos contar tus tareas del día. Tus hábitos y eventos sí se ven abajo.
+    </div>
+  {% else %}
+    <section class="card metrica-principal" aria-labelledby="titulo-tareas">
+      <h2 class="solo-lectores" id="titulo-tareas">Actividades completadas</h2>
+
+      <span class="text-data metrica-cifra">{{ resumen.tareas.porcentaje }}%</span>
+      <p class="metrica-fraccion">
+        {{ resumen.tareas.completadas }} de {{ resumen.tareas.total }} actividades completadas
+      </p>
+
+      <div class="barra-progreso"
+           role="progressbar"
+           aria-valuenow="{{ resumen.tareas.porcentaje }}"
+           aria-valuemin="0"
+           aria-valuemax="100"
+           aria-label="{{ resumen.tareas.porcentaje }} por ciento de actividades completadas">
+        <div class="barra-progreso-relleno" style="width: {{ resumen.tareas.porcentaje }}%"></div>
+      </div>
+    </section>
+
+    {% if resumen.secciones %}
+      <div class="metrica-rejilla">
+        {% for nombre, seccion in resumen.secciones.items() %}
+          <section class="metrica-tarjeta">
+            <h3>{{ nombre }}</h3>
+            <p class="metrica-fraccion">
+              <span class="text-data">{{ seccion.completadas }}</span> de
+              <span class="text-data">{{ seccion.total }}</span>
+              — <span class="text-data">{{ seccion.porcentaje }}%</span>
+            </p>
+            <div class="barra-progreso"
+                 role="progressbar"
+                 aria-valuenow="{{ seccion.porcentaje }}"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 aria-label="{{ nombre }}: {{ seccion.porcentaje }} por ciento">
+              <div class="barra-progreso-relleno" style="width: {{ seccion.porcentaje }}%"></div>
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# Bloque de habitos, VISUALMENTE SEPARADO y sin porcentaje (TC-39). #}
+  <section class="card bloque-habitos" aria-labelledby="titulo-habitos">
+    <h2 class="card-titulo" id="titulo-habitos">
+      Hábitos de hoy:
+      <span class="text-data">{{ resumen.habitos.marcados }}</span> de
+      <span class="text-data">{{ resumen.habitos.total }}</span>
+    </h2>
+    <p class="text-muted">
+      Los hábitos van aparte del porcentaje de actividades a propósito: son
+      rutinas que se sostienen día a día, no tareas que se terminan. Mezclarlos
+      haría que ninguno de los dos números signifique nada.
+    </p>
+    <a class="btn btn--secondary btn--sm" href="{{ url_for('habitos.lista') }}">Ver mis hábitos</a>
+  </section>
+
+  <section class="card" aria-labelledby="titulo-eventos">
+    <h2 class="card-titulo" id="titulo-eventos">
+      Eventos del día: <span class="text-data">{{ resumen.eventos }}</span>
+    </h2>
+    <a class="btn btn--secondary btn--sm" href="{{ url_for('calendar_bp.index') }}">Ver el calendario</a>
+  </section>
+
+  {% if resumen.tareas.total == 0 and resumen.habitos.total == 0 and resumen.eventos == 0 %}
+    <div class="estado-vacio">
+      <h3>Sin actividad este día</h3>
+      <p>Hoy no registraste actividad. Cuando completes algo, lo verás aquí.</p>
+      <a class="btn btn--secondary" href="{{ url_for('habitos.lista') }}">Empezar un hábito</a>
+    </div>
+  {% endif %}
+
+{% endblock %}
