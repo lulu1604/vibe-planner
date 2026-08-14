@@ -50,16 +50,13 @@ CSRF_FIELD = "_csrf"
 
 METODOS_SEGUROS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
-# Rutas de la v1 exentas de CSRF durante la transicion.
-# Anadido 2026-08-13: son las 3 rutas de tareas monousuario, que hoy no tienen
-# sesion que falsificar y cuyos formularios son de Ana. Desaparecen cuando el
-# Modulo B reescriba el planner sobre `@login_required`, y con ellas esta lista.
-# NADA nuevo entra aqui: si un formulario necesita exencion, esta mal disenado.
-CSRF_EXENTAS = frozenset({
-    "add_task_route",
-    "delete_task_route",
-    "update_status_route",
-})
+# Exenciones de CSRF. ESTA VACIA, Y ASI DEBE QUEDARSE.
+#
+# Existio brevemente para las 3 rutas de tareas de la v1, cuyos formularios no
+# tenian token. Al actualizar esa pantalla a la v2 se les anadio y la lista se
+# quedo sin nada dentro, que es donde tiene que estar: si manana un formulario
+# "necesita" entrar aqui, lo que hay que arreglar es el formulario.
+CSRF_EXENTAS = frozenset()
 
 
 # --------------------------------------------------------------------------

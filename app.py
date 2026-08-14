@@ -22,17 +22,57 @@ from datetime import datetime
 
 from flask import Flask, flash, get_flashed_messages, jsonify, redirect, render_template, request, url_for
 
+import config
 import database
 import scoring
+import security
+from admin import admin as admin_bp
+from auth import auth as auth_bp
+from home import home as home_bp, register_menu
+from perfil import perfil as perfil_bp
 
 app = Flask(__name__)          # <-- NO TOCAR ESTA LÍNEA
 
 # Necesaria para flash(): así los errores de validación llegan al usuario.
 # En PythonAnywhere se puede definir VIBEPLANNER_SECRET como variable de entorno.
-app.secret_key = os.environ.get("VIBEPLANNER_SECRET", "vibeplanner-esan-2026")
+app.secret_key = config.SECRET_KEY
+
+# v2: endurecido de la cookie de sesión. HTTPONLY impide que un XSS la lea;
+# SAMESITE=Lax hace que el navegador no la envíe en peticiones de otro sitio.
+app.config["SESSION_COOKIE_HTTPONLY"] = config.SESSION_COOKIE_HTTPONLY
+app.config["SESSION_COOKIE_SAMESITE"] = config.SESSION_COOKIE_SAMESITE
 
 # Inicializar esquema SQLite automáticamente al cargar el módulo WSGI
+# (v2: init_db() crea además las 5 tablas de identidad de schema_v2.sql)
 database.init_db()
+
+# --------------------------------------------------------------------------
+# v2 - NÚCLEO (Piero, Módulo A). Nada de esto altera las rutas de la v1.
+# --------------------------------------------------------------------------
+security.init_app(app)      # CSRF global + helpers de plantilla
+register_menu(app)          # menú filtrado por permisos, para base.html
+
+app.register_blueprint(auth_bp)      # /register /login /logout
+app.register_blueprint(home_bp)      # /inicio
+app.register_blueprint(admin_bp)     # /admin/usuarios
+app.register_blueprint(perfil_bp)    # /perfil
+
+
+@app.errorhandler(400)
+def _error_400(e):
+    # Casi siempre es el token CSRF caducado. `e.description` trae el texto
+    # concreto que puso quien llamó a abort().
+    return render_template("errors/400.html", descripcion=getattr(e, "description", None)), 400
+
+
+@app.errorhandler(403)
+def _error_403(e):
+    return render_template("errors/403.html"), 403
+
+
+@app.errorhandler(404)
+def _error_404(e):
+    return render_template("errors/404.html"), 404
 
 # Tiempo disponible por defecto (minutos). US2/US4 lo usan para el bono de tiempo.
 DEFAULT_AVAILABLE_MINUTES = 120
@@ -224,12 +264,21 @@ def _correr_pruebas():
     app.config["TESTING"] = True
     cliente = app.test_client()
 
+    # v2: ahora TODO POST lleva token CSRF. Se planta en la sesión del cliente
+    # de pruebas y se añade al formulario base — exactamente lo que hace el
+    # navegador con el <input type="hidden" name="_csrf"> que traen las
+    # plantillas. Los 11 asserts siguen probando lo mismo que probaban.
+    CSRF = "token-de-prueba"
+    with cliente.session_transaction() as sesion:
+        sesion["_csrf"] = CSRF
+
     def total_tareas():
         with app.app_context():
             return len(database.get_tasks())
 
     base = {"title": "Tarea valida", "due_date": "2026-08-20",
-            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45"}
+            "category": "Estudio", "priority_level": "1", "estimated_minutes": "45",
+            "_csrf": CSRF}
 
     def enviar(**cambios):
         datos = dict(base)

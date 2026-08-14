@@ -1,10 +1,36 @@
-<!-- US4: modal de explicabilidad. Lo llena main.js con el JSON de la API. -->
-<div id="score-modal" class="modal" hidden>
-  <div class="modal-content">
-    <button id="modal-close">Cerrar</button>
-    <h3>Por que esta en este lugar?</h3>
-    <p id="modal-total"></p>
-    <ul id="modal-breakdown"></ul>
-    {# TODO (Ana): mejorar presentacion (barras por componente, colores) #}
+{#
+  US4 - Modal de auditoria del puntaje.
+  --------------------------------------------------------------------------
+  ES LA PANTALLA MAS IMPORTANTE DEL PRODUCTO. Es donde se ve la diferencia
+  con Todoist y con Motion, y donde alguien decide si confia en el orden o
+  lo ignora.
+
+  Actualizado a la v2 -- resuelve el TODO que dejo Ana ("mejorar presentacion:
+  barras por componente, colores") y pasa de <div hidden> a <dialog>, que trae
+  de fabrica el cierre con Escape, la trampa de foco y devolver el foco al
+  boton que lo abrio, tal y como pide el design system.
+
+  Los IDs son los mismos que usa main.js.
+#}
+<dialog class="modal" id="score-modal" aria-labelledby="titulo-score">
+  <div class="modal-cabecera">
+    <h2 id="titulo-score">Por que este orden?</h2>
+    <button class="modal-cerrar" type="button" id="modal-close" aria-label="Cerrar">
+      &times;
+    </button>
   </div>
-</div>
+
+  <div class="modal-cuerpo">
+    <p id="modal-total" class="text-data"
+       style="font-size:var(--text-3xl); font-weight:700; color:var(--text-strong);"></p>
+
+    {# main.js pinta aqui una barra por componente del puntaje. La suma
+       mostrada DEBE coincidir con la insignia de la tarjeta (TC-15): si
+       difieren, se pierde el diferenciador del producto entero. #}
+    <ul id="modal-breakdown" class="pila-4" style="margin:var(--space-4) 0;"></ul>
+  </div>
+
+  <div class="modal-pie">
+    <button class="btn btn--primary" type="button" data-cierra-modal>Entendido</button>
+  </div>
+</dialog>

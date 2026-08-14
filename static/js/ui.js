@@ -39,16 +39,37 @@
     });
   });
 
+  // Cierre 1 de 3: los botones "x" y "Cancelar".
+  document.querySelectorAll("[data-cierra-modal]").forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      var modal = boton.closest("dialog");
+      if (modal) modal.close();
+    });
+  });
+
+  // Cierre 2 de 3: clic fuera. (El 3 es Escape, y lo trae <dialog> de fabrica,
+  // igual que devolver el foco al boton que lo abrio.)
   document.querySelectorAll("dialog.modal").forEach(function (modal) {
     modal.addEventListener("click", function (evento) {
       // El <dialog> ocupa toda la pantalla; el recuadro visible es su caja.
       // Si el clic cae fuera de esa caja, fue en el fondo.
+      if (evento.target !== modal) return;
       var caja = modal.getBoundingClientRect();
       var fuera = evento.clientX < caja.left || evento.clientX > caja.right ||
                   evento.clientY < caja.top  || evento.clientY > caja.bottom;
       if (fuera) modal.close();
     });
   });
+
+  // Un formulario que volvio con errores de validacion reabre su modal solo:
+  // si no, los mensajes de error quedarian dentro de un dialogo cerrado y la
+  // pantalla pareceria no haber hecho nada.
+  var modalPendiente = document.querySelector("dialog[data-abrir-al-cargar]");
+  if (modalPendiente && typeof modalPendiente.showModal === "function") {
+    modalPendiente.showModal();
+    var primerError = modalPendiente.querySelector("[aria-invalid='true']");
+    if (primerError) primerError.focus();
+  }
 
   /* -------------------------------------------------------------------
      3. Aviso de campo ya tomado (solo en el panel de administracion)
