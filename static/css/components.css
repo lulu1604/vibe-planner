@@ -331,7 +331,98 @@
 }
 
 /* =====================================================================
-   10. PLANNER  (US1-US4)
+   10. MENU DE CUENTA  (barra superior, a la derecha)
+   El disparador vive sobre navy; el panel es claro. Por eso el anillo de
+   foco cambia entre uno y otro -- ver la nota del disparador.
+   ===================================================================== */
+.menu-cuenta { position: relative; }
+
+.menu-cuenta-disparador {
+  display: flex; align-items: center; gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-on-dark);
+  font-size: var(--text-sm); font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.menu-cuenta-disparador:hover { background: rgba(255, 255, 255, .10); }
+
+/* El topbar es navy: con --focus-ring (--teal-700) el anillo daria 1.53:1,
+   o sea invisible. Sobre oscuro se usa --sky, que da 7.22:1. */
+.menu-cuenta-disparador:focus-visible {
+  outline: 3px solid var(--focus-ring-on-dark);
+  outline-offset: 2px;
+}
+
+/* La flecha gira: una segunda senal de "abierto" ademas de que aparezca el
+   panel, util cuando el panel queda fuera de la vista al hacer scroll. */
+.menu-cuenta-disparador[aria-expanded="true"] { background: rgba(255, 255, 255, .14); }
+.menu-cuenta-disparador[aria-expanded="true"] .menu-cuenta-flecha { transform: rotate(180deg); }
+.menu-cuenta-flecha { transition: transform var(--transition); }
+
+.menu-cuenta-avatar {
+  display: grid; place-items: center;
+  width: 28px; height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--sky); color: var(--navy);
+  font-size: var(--text-xs); font-weight: 700;
+}
+
+/* El nombre se esconde en pantallas estrechas: el avatar y la flecha ya
+   dicen que hay un menu de cuenta, y a 360 px cada pixel cuenta. */
+.menu-cuenta-nombre { display: none; }
+@media (min-width: 480px) { .menu-cuenta-nombre { display: inline; } }
+
+.menu-cuenta-panel {
+  position: absolute; top: calc(100% + var(--space-2)); right: 0;
+  z-index: 40;
+  min-width: 15rem;
+  padding: var(--space-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+/* `hidden` por defecto pierde contra `display:flex`; hay que reforzarlo. */
+.menu-cuenta-panel[hidden] { display: none; }
+
+.menu-cuenta-cabecera {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--space-3);
+}
+.menu-cuenta-cabecera strong { color: var(--text-strong); }
+.menu-cuenta-cabecera .text-muted { font-size: var(--text-xs); word-break: break-all; }
+
+.menu-cuenta-separador {
+  height: 1px; margin: var(--space-2) 0;
+  background: var(--border);
+}
+
+.menu-cuenta-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-min);       /* objetivo tactil, tambien en el menu */
+  padding: var(--space-2) var(--space-3);
+  border: 0; border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-body);
+  font-size: var(--text-sm); font-weight: 500;
+  text-align: left; text-decoration: none;
+  cursor: pointer;
+}
+.menu-cuenta-item:hover { background: var(--bg-subtle); color: var(--navy); }
+/* Dentro del panel el fondo es claro, asi que vuelve el anillo normal. */
+.menu-cuenta-item:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -2px; }
+
+.menu-cuenta-item--salir { color: var(--rose-700); }
+.menu-cuenta-item--salir:hover { background: var(--blush); color: var(--rose-700); }
+
+/* =====================================================================
+   11. PLANNER  (US1-US4)
    ===================================================================== */
 .barra-progreso {
   height: 10px;

@@ -254,6 +254,46 @@ def main():
     r = _post(admin_cli, "/admin/usuarios/999999/estado", is_active="0")
     comprobar("        id de usuario inexistente -> 404", r.status_code == 404, r.status_code)
 
+    r = admin_cli.get("/admin/usuarios/999999")
+    comprobar("        detalle de un id inexistente -> 404", r.status_code == 404, r.status_code)
+
+    # --- Pantalla de mantenimiento ---------------------------------------
+    r = admin_cli.get(f"/admin/usuarios/{piero['id']}")
+    comprobar("        el detalle de una cuenta abre (200)", r.status_code == 200, r.status_code)
+
+    r = _post(admin_cli, f"/admin/usuarios/{piero['id']}/datos",
+              full_name="Piero Calderon Ramos", email="piero.nuevo@esan.pe")
+    with app.app_context():
+        db = database.raw_connection()
+        actualizado = repo_users.get_by_id(piero["id"], conn=db)
+        db.close()
+    comprobar("        editar nombre y correo de otra cuenta funciona",
+              r.status_code == 302 and actualizado["email"] == "piero.nuevo@esan.pe"
+              and actualizado["full_name"] == "Piero Calderon Ramos", r.status_code)
+
+    # El correo de `admin` ya existe: debe rebotar con 400, NO con un 500 por
+    # el UNIQUE de la base.
+    r = _post(admin_cli, f"/admin/usuarios/{piero['id']}/datos",
+              full_name="Piero", email="admin@vibeplanner.local")
+    with app.app_context():
+        db = database.raw_connection()
+        sin_cambios = repo_users.get_by_id(piero["id"], conn=db)
+        db.close()
+    comprobar("        correo duplicado al editar -> 400 y no cambia nada",
+              r.status_code == 400 and sin_cambios["email"] == "piero.nuevo@esan.pe",
+              r.status_code)
+
+    r = _post(admin_cli, f"/admin/usuarios/{piero['id']}/datos",
+              full_name="Piero", email="esto-no-es-un-correo")
+    comprobar("        correo invalido al editar -> 400", r.status_code == 400, r.status_code)
+
+    # --- El menu de cuenta se filtra por permisos ------------------------
+    html_admin = admin_cli.get("/inicio").get_data(as_text=True)
+    html_piero = piero_cli.get("/inicio").get_data(as_text=True)
+    comprobar("        el menu ofrece Gestion de usuarios solo a quien puede",
+              "Gestion de usuarios" in html_admin
+              and "Gestion de usuarios" not in html_piero)
+
     print("\n--- Transversales ---")
 
     # --- CSRF -------------------------------------------------------------
